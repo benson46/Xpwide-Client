@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { axiosInstance, googleAxiosInstance } from "../utils/axios";
+import { adminAxiosInstance, axiosInstance, googleAxiosInstance } from "../utils/axios";
+import toast from "react-hot-toast";
+import { data } from "react-router-dom";
 
 const initialState = {
   user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null,
@@ -14,6 +16,7 @@ export const login = createAsyncThunk(
       const response = await axiosInstance.post("/login", formData);
       return response.data;
     } catch (error) {
+      toast.error(error.response?.data?.message)
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
   }
@@ -31,6 +34,8 @@ export const googleLogin = createAsyncThunk(
   }
 );
 
+
+
 export const logout = createAsyncThunk(
   "user/logout",
   async (userId, { rejectWithValue }) => {
@@ -42,6 +47,25 @@ export const logout = createAsyncThunk(
     }
   }
 );
+
+
+export const checkUserStatus = createAsyncThunk(
+  "user/checkStatus",
+  async (_, { rejectWithValue }) => {
+    try {
+      const userId = JSON.parse(localStorage.getItem("user"))._id;
+      console.log(userId);
+      const response = await adminAxiosInstance.get(`/check-status?userId=${userId}`);
+      console.log(response);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Error checking status");
+    }
+  }
+);
+
+
+
 
 const userSlice = createSlice({
   name: "user",
@@ -89,7 +113,7 @@ const userSlice = createSlice({
       .addCase(googleLogin.rejected, (state) => {
         state.loading = false;
       });
-
+      
     builder
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -101,6 +125,20 @@ const userSlice = createSlice({
         state.loading = false;
       })
       .addCase(logout.rejected, (state) => {
+        state.loading = false;
+      });
+      builder
+      .addCase(checkUserStatus.fulfilled, (state, action) => {
+        // If user is blocked, clear the user session
+        if (action.payload.message === "User is blocked") {
+          state.user = null;
+          state.isAuthenticated = false;
+          localStorage.removeItem("user");
+          toast.error("Your account is blocked.");
+        }
+      })
+      .addCase(checkUserStatus.rejected, (state, action) => {
+        // Handle the rejected state (e.g., show error message)
         state.loading = false;
       });
   },

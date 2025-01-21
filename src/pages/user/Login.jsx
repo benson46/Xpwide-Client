@@ -27,6 +27,7 @@ export default function Login() {
       const res = await googleAxiosInstance.post("/login-google", {
         token: response.credential,
       });
+      console.log(res)
       dispatch(googleLogin(response.credential))
       .then((res) => {
         toast.success("Login successful!");

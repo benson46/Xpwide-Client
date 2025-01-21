@@ -84,7 +84,7 @@ export default function ProductDetails() {
           <div className="relative">
             <div
               ref={imageRef}
-              className="relative aspect-square overflow-hidden rounded-lg"
+              className="relative aspect-square w-3/4 h-auto overflow-hidden rounded-lg"
               onMouseEnter={() => setIsZoomed(true)}
               onMouseLeave={() => setIsZoomed(false)}
               onMouseMove={handleMouseMove}
@@ -258,45 +258,6 @@ export default function ProductDetails() {
           )}
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 border-t pt-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-semibold mb-4">Contact us</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Email: support@xpwide.com</li>
-                <li>Phone: +1 234 567 890</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Return policy</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>How to return</li>
-                <li>Return policy</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Privacy policy</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Terms of service</li>
-                <li>Privacy policy</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Customer care</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>FAQ</li>
-                <li>Help center</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-gray-500">
-            © 2024 Value Corporation. All rights reserved. All trademarks are
-            property of their respective owners in the US and other countries.
-            <br />
-            VAT included in all prices where applicable.
-          </div>
-        </footer>
       </div>
     </>
   );

@@ -1,19 +1,34 @@
 "use client";
 
 import { Link } from "react-router-dom";
-import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react"; // Importing LogOut icon
+import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react";
 import { Button } from "../ui/Buttons";
-import { useState } from "react";
-import { useSelector, useDispatch } from "react-redux"; // Added useDispatch for logout
-import { logout } from "../../store/userSlice"; // Import logout action (customize based on your setup)
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { checkUserStatus, logout } from "../../store/userSlice";
 
 function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const user = useSelector((state) => state.user?.user);
-  console.log(user)
-  const dispatch = useDispatch(); 
+  const dispatch = useDispatch();
   const isLoggedIn = !!user;
+
+  useEffect(() => {
+    if (user) { // Check if the user is not null
+      const intervalId = setInterval(async () => {
+        const userStatus = await dispatch(checkUserStatus());
+        console.log(userStatus);
+        if (userStatus.payload === 'User is blocked') {
+          dispatch(logout(user._id));
+        }
+      }, 6000);
+  
+      return () => clearInterval(intervalId);
+    }
+  }, [dispatch, user]);
+  
+  
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -24,7 +39,7 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    dispatch(logout(user._id)); // Dispatching logout action
+    dispatch(logout(user._id));
   };
 
   return (
@@ -75,10 +90,8 @@ function Navbar() {
                   style={{ transform: "translateX(-40%)" }}
                   onMouseLeave={() => setShowDropdown(false)}
                 >
-                  {/* Triangle Pointer */}
                   <div className="absolute -top-2 right-1/2 translate-x-1/2 w-4 h-4 bg-white rotate-45 z-40"></div>
 
-                  {/* Dropdown Items */}
                   <Link
                     to="/orders"
                     className="block px-4 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
