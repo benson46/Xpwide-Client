@@ -15,18 +15,18 @@ function Navbar() {
   const isLoggedIn = !!user;
 
   useEffect(() => {
-    if (user) { // Check if the user is not null
+    if ( user) { 
       const intervalId = setInterval(async () => {
-        const userStatus = await dispatch(checkUserStatus());
-        console.log(userStatus);
+        const userStatus = await dispatch(checkUserStatus({ userId: user?._id || googleUser.id }));
         if (userStatus.payload === 'User is blocked') {
-          dispatch(logout(user._id));
+          dispatch(logout(user._id));  
         }
       }, 6000);
   
       return () => clearInterval(intervalId);
     }
   }, [dispatch, user]);
+  
   
   
 

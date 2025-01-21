@@ -1,10 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAxiosInstance, axiosInstance, googleAxiosInstance } from "../utils/axios";
 import toast from "react-hot-toast";
-import { data } from "react-router-dom";
 
 const initialState = {
-  user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null,
+  user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user"))  : null,
   loading: false,
   isAuthenticated: !!localStorage.getItem("user"),
 };
@@ -54,9 +53,7 @@ export const checkUserStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const userId = JSON.parse(localStorage.getItem("user"))._id;
-      console.log(userId);
       const response = await adminAxiosInstance.get(`/check-status?userId=${userId}`);
-      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Error checking status");
