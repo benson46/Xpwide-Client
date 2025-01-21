@@ -18,7 +18,7 @@ export default function EditBrandModal({ isOpen, onClose, brand, onUpdate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate({ ...brand, ...formData }); // Pass updated Brand data
+    onUpdate({ ...brand, ...formData });
     onClose();
   };
 

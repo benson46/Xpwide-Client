@@ -11,7 +11,7 @@ export default function EditProductModal({
   onUpdate,
 }) {
   const [formData, setFormData] = useState({
-    id:"",
+    id: "",
     name: "",
     category: "",
     brand: "",
@@ -24,11 +24,10 @@ export default function EditProductModal({
   const [previewImage, setPreviewImage] = useState(null); // For full-screen preview
   const cropperRef = useRef(null);
 
-  
   useEffect(() => {
     if (products) {
       setFormData({
-        id:products._id,
+        id: products._id,
         name: products.name,
         category: products.category.title,
         brand: products.brand.title,
@@ -37,7 +36,7 @@ export default function EditProductModal({
         description: products.description,
       });
 
-      setImages(products.images||[])
+      setImages(products.images || []);
     }
   }, [products]);
 
@@ -65,7 +64,7 @@ export default function EditProductModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     const updatedProduct = { ...formData, images };
-    onUpdate(updatedProduct); // Call the save callback with updated product data
+    onUpdate(updatedProduct);
     onClose();
   };
 
@@ -89,7 +88,7 @@ export default function EditProductModal({
           Category
         </label>
         <select
-          value={formData.category.title }
+          value={formData.category.title}
           onChange={(e) =>
             setFormData({ ...formData, category: e.target.value })
           }
@@ -98,7 +97,7 @@ export default function EditProductModal({
           <option value="">Select category</option>
           {categories && categories.length > 0 ? (
             categories.map((category) => (
-              <option key={category._id} value={category.title} >
+              <option key={category._id} value={category.title}>
                 {category.title}
               </option>
             ))

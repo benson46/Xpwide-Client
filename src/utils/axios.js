@@ -7,10 +7,10 @@ export const axiosInstance = axios.create({
 
 export const adminAxiosInstance = axios.create({
     baseURL:"http://localhost:5000/api/admin",
-    withCredentials:true, // send cookies to the server
+    withCredentials:true, 
 })
 
 export const googleAxiosInstance = axios.create({
     baseURL:"http://localhost:5000/api/google",
-    withCredentials:true, // send cookies to the server
+    withCredentials:true, 
 })

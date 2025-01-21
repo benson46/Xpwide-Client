@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import Modal from "../Modal";
 
-export default function EditCategoryModal({ isOpen, onClose, category, onUpdate }) {
+export default function EditCategoryModal({
+  isOpen,
+  onClose,
+  category,
+  onUpdate,
+}) {
   const [formData, setFormData] = useState({
-    categoryId:"",
+    categoryId: "",
     title: "",
     description: "",
   });
@@ -11,7 +16,7 @@ export default function EditCategoryModal({ isOpen, onClose, category, onUpdate 
   useEffect(() => {
     if (category) {
       setFormData({
-        categoryId:category._id,
+        categoryId: category._id,
         title: category.title,
         description: category.description,
       });

@@ -135,7 +135,6 @@ const userSlice = createSlice({
         }
       })
       .addCase(checkUserStatus.rejected, (state, action) => {
-        // Handle the rejected state (e.g., show error message)
         state.loading = false;
       });
   },

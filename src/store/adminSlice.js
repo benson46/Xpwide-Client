@@ -9,7 +9,6 @@ export const adminLogin = createAsyncThunk(
       const response = await adminAxiosInstance.post("/login", formData);
       const adminData = response.data.admin;
 
-      // Store admin data in localStorage
       localStorage.setItem("adminInfo", JSON.stringify(adminData));
 
       return adminData;
@@ -31,7 +30,6 @@ const adminSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.adminInfo = null;
-      // Remove admin data from localStorage
       localStorage.removeItem("adminInfo");
     },
   },

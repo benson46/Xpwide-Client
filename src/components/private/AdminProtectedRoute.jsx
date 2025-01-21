@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 export const AdminAuth = ({ children }) => {
-  const { adminInfo } = useSelector((state) => state.admin); // Use correct state structure
+  const { adminInfo } = useSelector((state) => state.admin);
 
   useEffect(() => {
     console.log("AdminAuth Status:", adminInfo);
@@ -16,13 +16,12 @@ export const AdminAuth = ({ children }) => {
   }
 };
 
-
 export const AdminRequireAuth = ({ children }) => {
-    const { adminInfo } = useSelector((state) => state.admin); // Use correct state structure
-  
-    if (adminInfo) {
-      return <Navigate to="/admin/dashboard" />;
-    } else {
-      return <>{children}</>;
-    }
-  };
+  const { adminInfo } = useSelector((state) => state.admin);
+
+  if (adminInfo) {
+    return <Navigate to="/admin/dashboard" />;
+  } else {
+    return <>{children}</>;
+  }
+};

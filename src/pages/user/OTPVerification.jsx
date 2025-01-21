@@ -9,12 +9,11 @@ export default function OTPVerification() {
     otp: "",
     email: location.state?.email, // email passed from the previous page
   });
-  const [timeLeft, setTimeLeft] = useState(60); // Countdown for resend OTP
-  const [isResendDisabled, setIsResendDisabled] = useState(true); // Disable resend initially
+  const [timeLeft, setTimeLeft] = useState(); 
+  const [isResendDisabled, setIsResendDisabled] = useState(true); 
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Timer logic for enabling resend button
   useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -32,7 +31,7 @@ export default function OTPVerification() {
   };
 
   const handleResendOTP = async () => {
-    setTimeLeft(5); // Reset the timer
+    setTimeLeft(60); 
     setIsResendDisabled(true);
     try {
       await axiosInstance.post("/resend-otp", { email: location.state?.email });
@@ -52,11 +51,9 @@ export default function OTPVerification() {
 
     try {
       if (location.state?.from === "reset-password") {
-        // Verify OTP for reset-password
         await axiosInstance.post("/verify-reset-otp", data);
         navigate("/reset-password", { state: { email: data.email } });
       } else if (location.state?.from === "signup") {
-        // Verify OTP and create user
         await axiosInstance.post("/verify-signup-otp", data);
         navigate("/login");
         toast.success("Signup successful. Please login.");

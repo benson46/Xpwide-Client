@@ -5,7 +5,7 @@ import AddNewProduct from "../../components/admin/productModal/AddNewProduct";
 import EditProduct from "../../components/admin/productModal/EditProduct";
 import Sidebar from "../../components/admin/Sidebar";
 import Navbar from "../../components/admin/Navbar";
-import { adminAxiosInstance } from "../../utils/axios"; // Assuming axios instance is in lib/axios.js
+import { adminAxiosInstance } from "../../utils/axios"; 
 import toast from "react-hot-toast";
 
 export default function ProductPage() {

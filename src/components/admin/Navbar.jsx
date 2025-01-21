@@ -11,15 +11,10 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // Perform any necessary API logout request
       const response = await adminAxiosInstance.post("/logout");
-
-      // If the response is successful, clear the Redux state and localStorage
       if (response) {
-        dispatch(logout()); // Dispatch the logout action to clear adminInfo from Redux store
-        localStorage.removeItem("adminInfo"); // Ensure that adminInfo is removed from localStorage
-
-        // Redirect to login page and show a success toast
+        dispatch(logout());
+        localStorage.removeItem("adminInfo");
         navigate("/admin");
         toast.success("Logout Success");
       }
@@ -55,7 +50,10 @@ export default function Navbar() {
           <User className="h-5 w-5" />
           <span>Admin</span>
         </div>
-        <button className="text-yellow-500 hover:text-yellow-400" onClick={handleLogout}>
+        <button
+          className="text-yellow-500 hover:text-yellow-400"
+          onClick={handleLogout}
+        >
           <LogOut className="h-5 w-5" />
         </button>
       </div>

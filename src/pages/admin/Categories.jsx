@@ -16,7 +16,7 @@ export default function Categories() {
   const fetchCategory = async () => {
     try {
       const response = await adminAxiosInstance.get("/category");
-      setCategories(response.data.categories || []); // Ensure fallback to an empty array
+      setCategories(response.data.categories || []);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch categories.");

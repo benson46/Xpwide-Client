@@ -78,7 +78,6 @@ export default function AddNewProduct({
       return;
     }
 
-    // Pass form data and images URLs to the parent
     onSubmit({ ...formData, images });
     setFormData({
       name: "",
@@ -121,7 +120,7 @@ export default function AddNewProduct({
           >
             <option value="">Select category</option>
             {categories
-              .filter((category) => !category.isBlocked) 
+              .filter((category) => !category.isBlocked)
               .map((category) => (
                 <option key={category._id} value={category._id}>
                   {category.title}

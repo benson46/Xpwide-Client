@@ -1,4 +1,15 @@
-import { LayoutGrid, ShoppingCart, Package, Users, Grid, Ticket, ImageIcon, Wallet, Percent, Tag } from 'lucide-react';
+import {
+  LayoutGrid,
+  ShoppingCart,
+  Package,
+  Users,
+  Grid,
+  Ticket,
+  ImageIcon,
+  Wallet,
+  Percent,
+  Tag,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const menuItems = [
@@ -48,4 +59,3 @@ export default function Sidebar({ activePage }) {
     </aside>
   );
 }
-

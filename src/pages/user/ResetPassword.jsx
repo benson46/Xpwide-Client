@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom' // Import useNavigate from React Router
+import { useLocation, useNavigate } from 'react-router-dom' 
 import { axiosInstance } from '../../utils/axios'
-import toast from 'react-hot-toast' // For user-friendly notifications
+import toast from 'react-hot-toast' 
 
 export default function ResetPassword({ token }) {
   const [passwords, setPasswords] = useState({
@@ -12,7 +12,7 @@ export default function ResetPassword({ token }) {
   })
   const location = useLocation();
   const email = location.state?.email;
-  const navigate = useNavigate() // Initialize useNavigate
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +23,6 @@ export default function ResetPassword({ token }) {
       return;
     }
   
-    // Optional: Add password strength validation
     if (passwords.newPassword.length < 8) {
       toast.error('Password must be at least 8 characters long');
       return;
@@ -38,17 +37,14 @@ export default function ResetPassword({ token }) {
     }
   
     try {
-      // Make the API call to reset password
       const response = await axiosInstance.post('/reset-password', {
         password: passwords.newPassword,
         email,
       });
   
-      // Notify the user of success
       toast.success('Password reset successfully!');
-      navigate('/login'); // Navigate to login page after success
+      navigate('/login'); 
     } catch (error) {
-      // Handle errors (e.g., invalid token, server issues)
       console.error('Error resetting password:', error);
       toast.error(error.response?.data?.message || 'Failed to reset password');
     }

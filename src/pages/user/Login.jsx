@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { axiosInstance, googleAxiosInstance } from "../../utils/axios";
+import {  googleAxiosInstance } from "../../utils/axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import AdminLogin from "../admin/AdminLogin";

@@ -12,7 +12,7 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 p-6">
           <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
-          {/* Add dashboard content here */}
+          {/*  dashboard content  */}
         </main>
       </div>
     </div>
