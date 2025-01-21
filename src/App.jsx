@@ -12,7 +12,14 @@ import Brands from "./pages/admin/Brands";
 import ResetPasswordEmail from "./pages/user/ResetPasswordEmail";
 import ResetPassword from "./pages/user/ResetPassword";
 import ProductDetails from "./pages/user/ProductDetials";
-import { UserAuth, UserRequireAuth } from "./components/private/protectedRoute";
+import {
+  AdminAuth,
+  AdminRequireAuth,
+} from "./components/private/AdminProtectedRoute";
+import {
+  UserAuth,
+  UserRequireAuth,
+} from "./components/private/userProtectedRoute";
 
 function App() {
   return (
@@ -20,12 +27,54 @@ function App() {
       <Routes>
         {/* Admin routes */}
         <Route path="/admin">
-          <Route index element={<AdminLogin />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<UserList />} />
-          <Route path="categories" element={<Categories />} />
-          <Route path="brands" element={<Brands />} />
-          <Route path="products" element={<ProductPage />} />
+          <Route
+            index
+            element={
+              <AdminRequireAuth>
+                <AdminLogin />
+              </AdminRequireAuth>
+            }
+          />
+          <Route
+            path="dashboard"
+            element={
+              <AdminAuth>
+                <AdminDashboard />
+              </AdminAuth>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <AdminAuth>
+                <UserList />
+              </AdminAuth>
+            }
+          />
+          <Route
+            path="categories"
+            element={
+              <AdminAuth>
+                <Categories />
+              </AdminAuth>
+            }
+          />
+          <Route
+            path="brands"
+            element={
+              <AdminAuth>
+                <Brands />
+              </AdminAuth>
+            }
+          />
+          <Route
+            path="products"
+            element={
+              <AdminAuth>
+                <ProductPage />
+              </AdminAuth>
+            }
+          />
         </Route>
 
         {/* User routes */}

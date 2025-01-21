@@ -10,7 +10,8 @@ import { logout } from "../../store/userSlice"; // Import logout action (customi
 function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const user = useSelector((state) => state.user.user);
+  const user = useSelector((state) => state.user?.user);
+  console.log(user)
   const dispatch = useDispatch(); 
   const isLoggedIn = !!user;
 
@@ -23,7 +24,7 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    dispatch(logout()); // Dispatching logout action
+    dispatch(logout(user._id)); // Dispatching logout action
   };
 
   return (

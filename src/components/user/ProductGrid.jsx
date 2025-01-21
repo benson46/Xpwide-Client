@@ -10,7 +10,6 @@ const ProductGrid = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       const response =await axiosInstance.get('/products');
-      console.log(response.data.products);
       setProducts(response.data.products)
     }
 

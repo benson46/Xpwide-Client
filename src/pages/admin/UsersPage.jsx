@@ -86,7 +86,7 @@ export default function UsersPage() {
                         <span>{user.name}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">{user.mobile}</td>
+                    <td className="py-3 px-4">{user.phoneNumber}</td>
                     <td className="py-3 px-4">{user.email}</td>
                     <td className="py-3 px-4">{user.createdAt}</td>
                     <td className="py-3 px-4">

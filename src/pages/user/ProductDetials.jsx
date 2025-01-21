@@ -48,12 +48,12 @@ export default function ProductDetails() {
         const relatedProducts = await axiosInstance.get("/related-products", {
           params: {
             categoryId: response.data.product.category?._id,
-            brand: response.data.product.brand?._id,
-            productId
+            brandId: response.data.product.brand?._id,
+            productId,
           },
         });
         setRelatedProducts(relatedProducts.data.products);
-        console.log(relatedProducts)
+        console.log(relatedProducts);
       }
     };
     fetchProductDetail();
@@ -163,28 +163,34 @@ export default function ProductDetails() {
               <p className="text-sm text-gray-500">{product.description}</p>
             </div>
             <div className="flex flex-col w-full items-start gap-4">
-              <div className="gap-2 flex items-center">
-                <label
-                  htmlFor="quantity"
-                  className="text-black text-lg font-medium"
-                >
-                  Quantity:
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  max="5"
-                  onChange={(e) => setQuantity(parseInt(e.target.value))}
-                  className="w-24 border text-center p-2 rounded"
-                />
-              </div>
-              <button className="flex-1 bg-orange-500 text-white px-5 py-2 rounded">
-                ADD TO CART
-              </button>
-              <button className="py-2 px-5 border rounded flex gap-4 items-center text-gray-700 text-lg font-medium">
-                Wishlist <HeartIcon />
-              </button>
+              {product.stock > 0 ? (
+                <>
+                  <div className="gap-2 flex items-center">
+                    <label
+                      htmlFor="quantity"
+                      className="text-black text-lg font-medium"
+                    >
+                      Quantity:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      max={product.stock}
+                      onChange={(e) => setQuantity(parseInt(e.target.value))}
+                      className="w-24 border text-center p-2 rounded"
+                    />
+                  </div>
+                  <button className="flex-1 bg-orange-500 text-white px-5 py-2 rounded">
+                    ADD TO CART
+                  </button>
+                  <button className="py-2 px-5 border rounded flex gap-4 items-center text-gray-700 text-lg font-medium">
+                    Wishlist <HeartIcon />
+                  </button>
+                </>
+              ) : (
+                <p className="text-red-500 font-bold">Out of Stock</p>
+              )}
             </div>
             <div className="text-gray-700 text-md font-semibold">
               <p>Brand: {product?.brand?.title}</p>

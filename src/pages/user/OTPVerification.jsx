@@ -9,7 +9,7 @@ export default function OTPVerification() {
     otp: "",
     email: location.state?.email, // email passed from the previous page
   });
-  const [timeLeft, setTimeLeft] = useState(5); // Countdown for resend OTP
+  const [timeLeft, setTimeLeft] = useState(60); // Countdown for resend OTP
   const [isResendDisabled, setIsResendDisabled] = useState(true); // Disable resend initially
   const [error, setError] = useState(null);
   const navigate = useNavigate();

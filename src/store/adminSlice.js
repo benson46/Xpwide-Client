@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAxiosInstance } from "../utils/axios";
-import { toast } from "react-hot-toast";
 
 // Async Thunks
 export const adminLogin = createAsyncThunk(
@@ -8,10 +7,14 @@ export const adminLogin = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const response = await adminAxiosInstance.post("/login", formData);
-      return response.data.admin;
+      const adminData = response.data.admin;
+
+      // Store admin data in localStorage
+      localStorage.setItem("adminInfo", JSON.stringify(adminData));
+
+      return adminData;
     } catch (error) {
-      toast.error(error.response?.data?.message || "login failed");
-      return rejectWithValue(error.response?.data?.message || "login failed");
+      return rejectWithValue(error.response?.data?.message || "Login failed");
     }
   }
 );
@@ -20,13 +23,16 @@ export const adminLogin = createAsyncThunk(
 const adminSlice = createSlice({
   name: "admin",
   initialState: {
-    admin: null,
+    adminInfo: localStorage.getItem("adminInfo")
+      ? JSON.parse(localStorage.getItem("adminInfo"))
+      : null,
     loading: false,
   },
   reducers: {
     logout: (state) => {
-      state.admin = null;
-      toast.success("Logged out successfully");
+      state.adminInfo = null;
+      // Remove admin data from localStorage
+      localStorage.removeItem("adminInfo");
     },
   },
   extraReducers: (builder) => {
@@ -36,7 +42,7 @@ const adminSlice = createSlice({
         state.loading = true;
       })
       .addCase(adminLogin.fulfilled, (state, action) => {
-        state.admin = action.payload;
+        state.adminInfo = action.payload;
         state.loading = false;
       })
       .addCase(adminLogin.rejected, (state) => {

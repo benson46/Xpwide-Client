@@ -1,17 +1,33 @@
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/adminSlice"; // Import the logout action
 import { Search, User, LogOut } from "lucide-react";
 import { adminAxiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
+  const dispatch = useDispatch(); // Dispatch function from Redux
   const navigate = useNavigate();
-  const handleLogout = async ()=>{
-    const response = await adminAxiosInstance.post('/logout');
-    if(response){
-      navigate('/admin')
-      toast.success('Logout Success')
+
+  const handleLogout = async () => {
+    try {
+      // Perform any necessary API logout request
+      const response = await adminAxiosInstance.post("/logout");
+
+      // If the response is successful, clear the Redux state and localStorage
+      if (response) {
+        dispatch(logout()); // Dispatch the logout action to clear adminInfo from Redux store
+        localStorage.removeItem("adminInfo"); // Ensure that adminInfo is removed from localStorage
+
+        // Redirect to login page and show a success toast
+        navigate("/admin");
+        toast.success("Logout Success");
+      }
+    } catch (error) {
+      toast.error("Logout Failed");
     }
-  }
+  };
+
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
       <div className="flex items-center">

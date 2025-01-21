@@ -2,8 +2,6 @@ import React from 'react';
 
 const ProductCard = ({ _id, name, price, discount, images, onClick}) => {
 
-  console.log(images)
-
   return (
     <div className="relative group"  onClick={() => onClick(_id)}>
       <div className="relative">

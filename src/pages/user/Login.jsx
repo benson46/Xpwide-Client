@@ -27,10 +27,11 @@ export default function Login() {
       const res = await googleAxiosInstance.post("/login-google", {
         token: response.credential,
       });
-      console.log(response)
-      dispatch(googleLogin(response.credential)); 
-      toast.success("Login successful!");
-      navigate('/')
+      dispatch(googleLogin(response.credential))
+      .then((res) => {
+        toast.success("Login successful!");
+        navigate('/')
+      })
     } catch (error) {
       toast.error("Google login failed!");
       console.error(error);
@@ -44,11 +45,7 @@ export default function Login() {
     e.preventDefault();
     try {
       dispatch(login(formData))
-        .unwrap()
-        .then((res) => {
-          toast.success("Login Success");
-          navigate("/");
-        });
+        .unwrap();
     } catch (error) {
       toast.error(error.response.data.message);
     }
