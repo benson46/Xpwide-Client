@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { showErrorToast } from './toastUtils'
-import { showCustomAlert } from './customAlert';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL,

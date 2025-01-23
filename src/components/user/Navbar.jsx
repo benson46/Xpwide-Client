@@ -6,6 +6,7 @@ import { Button } from "../ui/Buttons";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { checkUserStatus, logout } from "../../store/userSlice";
+import { axiosInstance } from "../../utils/axios";
 
 function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,17 +16,27 @@ function Navbar() {
   const isLoggedIn = !!user;
 
   useEffect(() => {
-    if ( user) { 
-      const intervalId = setInterval(async () => {
-        const userStatus = await dispatch(checkUserStatus({ userId: user?._id || googleUser.id }));
-        if (userStatus.payload === 'User is blocked') {
-          dispatch(logout(user._id));  
-        }
-      }, 6000);
+    const verifyUserStatus = async () => {
+      const accessToken = JSON.parse(localStorage.getItem('user'))?.accessToken;
+      console.log(accessToken)
+      try {
+        const response = await axiosInstance.get("/verify-user-status", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+
+          
+        });
+        console.log(response.data);
+      } catch (error) {
+        console.error("Error checking user status:", error);
+      }
+    };
+    
+
+    verifyUserStatus();
+  }, []);
   
-      return () => clearInterval(intervalId);
-    }
-  }, [dispatch, user]);
   
   
   

@@ -7,13 +7,6 @@ import Categories from '../../components/user/Categories'
 import ProductGrid from '../../components/user/ProductGrid'
 
 export default function Homepage() {
-const isBlocked = useSelector((state) => state.user?.user?.isBlocked);
-  console.log(isBlocked)
-  // useEffect(() => {
-  //   if (isBlocked) {
-  //     window.location.reload();
-  //   }
-  // }, [isBlocked]); 
 
   return (
     <div>
