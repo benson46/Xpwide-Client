@@ -9,7 +9,7 @@ export default function AddBrandModal({ isOpen, onClose, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+      onSubmit(formData);
     setFormData({ title: "", description: "" });
     onClose();
   };

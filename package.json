@@ -25,6 +25,7 @@
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "cropperjs": "^1.6.2",
+    "joi": "^17.13.3",
     "lucide-react": "^0.473.0",
     "postcss": "^8.5.1",
     "react": "^19.0.0",

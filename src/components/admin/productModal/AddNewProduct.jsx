@@ -3,12 +3,7 @@ import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { Upload, X } from "lucide-react";
 
-export default function AddNewProduct({
-  onClose,
-  categories,
-  brands,
-  onSubmit,
-}) {
+export default function AddNewProduct({ onClose, categories, brands, onSubmit }) {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -17,10 +12,29 @@ export default function AddNewProduct({
     stock: "",
     description: "",
   });
-  const [images, setImages] = useState([]); // To store Cloudinary URLs
-  const [selectedImage, setSelectedImage] = useState(null); // For image being cropped
-  const [previewImage, setPreviewImage] = useState(null); // For full-screen preview
+  const [formErrors, setFormErrors] = useState({});
+  const [images, setImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const cropperRef = useRef(null);
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Product name is required.";
+    if (!formData.category) errors.category = "Category is required.";
+    if (!formData.brand) errors.brand = "Brand is required.";
+    if (!formData.price || isNaN(formData.price) || formData.price <= 0) {
+      errors.price = "Valid price is required.";
+    }
+    if (!formData.stock || isNaN(formData.stock) || formData.stock < 0) {
+      errors.stock = "Valid stock quantity is required.";
+    }
+    if (!formData.description.trim()) {
+      errors.description = "Product description is required.";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -35,11 +49,10 @@ export default function AddNewProduct({
         .getCroppedCanvas()
         .toDataURL();
 
-      // Upload cropped image to Cloudinary
       try {
         const formData = new FormData();
         formData.append("file", croppedData);
-        formData.append("upload_preset", "xpwide"); // Replace with your Cloudinary upload preset
+        formData.append("upload_preset", "xpwide");
 
         const response = await fetch(
           "https://api.cloudinary.com/v1_1/dva0jwx03/image/upload",
@@ -52,13 +65,10 @@ export default function AddNewProduct({
         const data = await response.json();
 
         if (response.ok) {
-          setImages([...images, data.secure_url]); // Store Cloudinary URL in the array
-          setSelectedImage(null); // Clear the cropper
+          setImages([...images, data.secure_url]);
+          setSelectedImage(null);
         } else {
-          console.error(
-            "Failed to upload image to Cloudinary",
-            data.error.message
-          );
+          console.error("Failed to upload image to Cloudinary", data.error.message);
         }
       } catch (error) {
         console.error("An error occurred while uploading to Cloudinary", error);
@@ -67,14 +77,16 @@ export default function AddNewProduct({
   };
 
   const handleRemoveImage = (index) => {
-    setImages(images.filter((_, i) => i !== index)); // Remove image by index
+    setImages(images.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (!validateForm()) return;
+
     if (images.length !== 3) {
-      alert("Please upload exactly 3 images before adding the product.");
+      setFormErrors({ images: "Please upload exactly 3 images." });
       return;
     }
 
@@ -87,36 +99,37 @@ export default function AddNewProduct({
       stock: "",
       description: "",
     });
-    setImages([]); // Clear images after submission
+    setImages([]);
     onClose();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Form Fields */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-400">
-          Product Name
-        </label>
+        <label className="block text-sm font-medium text-gray-400">Product Name</label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+          className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
+        formErrors.name ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+      }`}
           placeholder="Enter product name"
         />
+        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">
-            Category
-          </label>
+          <label className="block text-sm font-medium text-gray-400">Category</label>
           <select
             value={formData.category}
             onChange={(e) =>
               setFormData({ ...formData, category: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-400 placeholder-gray-600 focus:outline-none ${
+              formErrors.category ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            }`}
           >
             <option value="">Select category</option>
             {categories
@@ -127,18 +140,19 @@ export default function AddNewProduct({
                 </option>
               ))}
           </select>
+          {formErrors.category && <p className="text-red-500 text-sm">{formErrors.category}</p>}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">
-            Brand
-          </label>
+          <label className="block text-sm font-medium text-gray-400">Brand</label>
           <select
             value={formData.brand}
             onChange={(e) =>
               setFormData({ ...formData, brand: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-400 placeholder-gray-600 focus:outline-none ${
+              formErrors.brand ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            }`}
           >
             <option value="">Select brand</option>
             {brands
@@ -149,60 +163,61 @@ export default function AddNewProduct({
                 </option>
               ))}
           </select>
+          {formErrors.brand && <p className="text-red-500 text-sm">{formErrors.brand}</p>}
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-400">
-          Description
-        </label>
+        <label className="block text-sm font-medium text-gray-600">Description</label>
         <textarea
           value={formData.description}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
-          className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+          className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
+            formErrors.description ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+          }`}
           placeholder="Enter product description"
         />
+        {formErrors.description && <p className="text-red-500 text-sm">{formErrors.description}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">
-            Price
-          </label>
+          <label className="block text-sm font-medium text-gray-400">Price</label>
           <input
             type="number"
             value={formData.price}
             onChange={(e) =>
               setFormData({ ...formData, price: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
+              formErrors.price ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            }`}
             placeholder="Enter price"
           />
+          {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">
-            Stock
-          </label>
+          <label className="block text-sm font-medium text-gray-400">Stock</label>
           <input
             type="number"
             value={formData.stock}
             onChange={(e) =>
               setFormData({ ...formData, stock: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none"
+            className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
+              formErrors.stock ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            }`}
             placeholder="Enter stock"
           />
+          {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
         </div>
       </div>
 
-      {/* Cropper and Images */}
       <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-400">
-          Product Images
-        </label>
+        <label className="block text-sm font-medium text-gray-400">Product Images</label>
         <div className="flex space-x-4">
           {images.map((image, index) => (
             <div key={index} className="relative">
@@ -210,7 +225,7 @@ export default function AddNewProduct({
                 src={image}
                 alt={`Cropped ${index}`}
                 className="h-32 w-32 rounded-lg object-cover cursor-pointer"
-                onClick={() => setPreviewImage(image)} // Open modal on click
+                onClick={() => setPreviewImage(image)}
               />
               <button
                 type="button"
@@ -265,7 +280,6 @@ export default function AddNewProduct({
         </div>
       </div>
 
-      {/* Submit and Cancel */}
       <div className="flex justify-end gap-3">
         <button
           type="button"
@@ -282,11 +296,10 @@ export default function AddNewProduct({
         </button>
       </div>
 
-      {/* Preview Modal */}
       {previewImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-          onClick={() => setPreviewImage(null)} // Close modal on click
+          onClick={() => setPreviewImage(null)}
         >
           <img
             src={previewImage}

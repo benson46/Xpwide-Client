@@ -9,12 +9,26 @@ export default function OTPVerification() {
     otp: "",
     email: location.state?.email, // email passed from the previous page
   });
-  const [timeLeft, setTimeLeft] = useState(); 
+  const [timeLeft, setTimeLeft] = useState(60); 
   const [isResendDisabled, setIsResendDisabled] = useState(true); 
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const sendOtp = async () => {
+      try {
+        const response = await axiosInstance.post('/resend-otp', { email: location.state?.email });
+        toast.success('OTP sent successfully');
+      } catch (error) {
+        toast.error('Failed to send OTP');
+      }
+    };
+  
+    sendOtp();
+  }, []); 
+  
+  useEffect(() => {
+    
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
@@ -22,6 +36,7 @@ export default function OTPVerification() {
       setIsResendDisabled(false);
     }
   }, [timeLeft]);
+  
 
   const handleOtpChange = (e) => {
     const { name, value } = e.target;
@@ -51,7 +66,7 @@ export default function OTPVerification() {
 
     try {
       if (location.state?.from === "reset-password") {
-        await axiosInstance.post("/verify-reset-otp", data);
+        await axiosInstance.post("/resend-otp", data);
         navigate("/reset-password", { state: { email: data.email } });
       } else if (location.state?.from === "signup") {
         await axiosInstance.post("/verify-signup-otp", data);

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {  googleAxiosInstance } from "../../utils/axios";
-import toast from "react-hot-toast";
+import { googleAxiosInstance } from "../../utils/axios";
 import { useDispatch } from "react-redux";
-import AdminLogin from "../admin/AdminLogin";
 import { googleLogin, login } from "../../store/userSlice";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -13,8 +11,27 @@ export default function Login() {
     password: "",
     rememberMe: false,
   });
+
+  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const validateFields = () => {
+    const errors = {};
+    if (!formData.email) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please provide a valid email address.";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required.";
+    }
+
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prevState) => ({
@@ -22,52 +39,48 @@ export default function Login() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+
   const responseMessage = async (response) => {
     try {
       const res = await googleAxiosInstance.post("/login-google", {
         token: response.credential,
       });
-      console.log(res)
-      dispatch(googleLogin(response.credential))
-      .then((res) => {
-        toast.success("Login successful!");
-        navigate('/')
-      })
+      dispatch(googleLogin(response.credential)).then(() => {
+        navigate("/");
+      });
     } catch (error) {
-      toast.error("Google login failed!");
+      toast.error(`Google login failed ${error}`)
       console.error(error);
     }
   };
-  
+
   const errorMessage = (error) => {
-    console.log(error);
+    console.error(error);
+    setErrors({ google: "Google login failed. Please try again." });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateFields()) return;
+
     try {
-      dispatch(login(formData))
-        .unwrap();
+      await dispatch(login(formData)).unwrap();
+      navigate("/");
     } catch (error) {
-      toast.error(error.response.data.message);
+      setErrors({ form: error.response?.data?.message || "Login failed." });
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-white">
-      {/* Logo */}
-      {/* <div className="mb-8">
-        <img 
-          src="/logo.png" 
-          alt="XPWide Logo" 
-          className="h-8"
-        />
-      </div> */}
-
-      {/* Login Form */}
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold text-center mb-2">
           Account Login
         </h1>
+
+        {errors.form && (
+          <p className="text-red-600 text-center mb-4">{errors.form}</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -78,13 +91,20 @@ export default function Login() {
               Email address
             </label>
             <input
-              type="email"
+              type="text"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-4 py-2 border ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 ${
+                errors.email ? "focus:ring-red-500" : "focus:ring-blue-500"
+              }`}
             />
+            {errors.email && (
+              <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -95,13 +115,20 @@ export default function Login() {
               Password
             </label>
             <input
-              type="password"
+              type="text"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-4 py-2 border ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 ${
+                errors.password ? "focus:ring-red-500" : "focus:ring-blue-500"
+              }`}
             />
+            {errors.password && (
+              <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between">
@@ -146,9 +173,11 @@ export default function Login() {
           </div>
 
           <div className="flex justify-center space-x-4">
-              <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
-            
+            <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
           </div>
+          {errors.google && (
+            <p className="text-red-600 text-center mt-4">{errors.google}</p>
+          )}
 
           <p className="mt-4 text-center text-sm text-gray-600">
             Don't have an account?{" "}
@@ -160,7 +189,7 @@ export default function Login() {
             </Link>
           </p>
         </form>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }

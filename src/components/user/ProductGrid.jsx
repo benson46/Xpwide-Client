@@ -11,7 +11,11 @@ const ProductGrid = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axiosInstance.get("/products");
+        const response = await axiosInstance.get("/products", {
+          params: {
+            isUser: true,
+          }
+        });
         setProducts(response.data.products);
       } catch (error) {
         console.error("Failed to fetch products:", error);

@@ -5,7 +5,7 @@ import AddNewProduct from "../../components/admin/productModal/AddNewProduct";
 import EditProduct from "../../components/admin/productModal/EditProduct";
 import Sidebar from "../../components/admin/Sidebar";
 import Navbar from "../../components/admin/Navbar";
-import { adminAxiosInstance } from "../../utils/axios"; 
+import { adminAxiosInstance } from "../../utils/axios";
 import toast from "react-hot-toast";
 
 export default function ProductPage() {
@@ -53,20 +53,39 @@ export default function ProductPage() {
 
   const handleAddProduct = async (formData) => {
     try {
+      const isProductExist = products.some(
+        (product) => product.name.toLowerCase() === formData.name.toLowerCase()
+      );
+
+      if (isProductExist) {
+        toast.error("Product must be unique");
+        return;
+      }
+
       await adminAxiosInstance.post("/products", formData);
-      fetchProduct();
       toast.success("Product added successfully!");
+      fetchProduct();
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error adding category.");
     }
   };
 
-  const handleEditProduct = async (product) => {
+  const handleEditProduct = async (formData) => {
+    console.log(formData)
     try {
-      await adminAxiosInstance.put(`/products/${product.id}`, product);
-      fetchProduct();
+      const isProductExist = products.some(
+        (product) => product.name.toLowerCase() === formData.name.toLowerCase()
+      );
+
+      if (isProductExist) {
+        toast.error("Product must be unique");
+        return;
+      }
+
+      await adminAxiosInstance.put(`/products/${formData.id}`, formData);
       toast.success("Product updated successfully!");
+      fetchProduct();
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error updating category.");
@@ -74,7 +93,7 @@ export default function ProductPage() {
   };
 
   const handleAction = async (productId) => {
-    await adminAxiosInstance.patch("/products", {productId });
+    await adminAxiosInstance.patch("/products", { productId });
     fetchProduct();
   };
 
@@ -159,16 +178,16 @@ export default function ProductPage() {
                             <Pencil className="h-5 w-5" />
                           </button>
                           <button
-                        className={`px-4 py-1 rounded-md text-sm font-medium uppercase
+                            className={`px-4 py-1 rounded-md text-sm font-medium uppercase
                           ${
                             !product.isBlocked
                               ? "bg-red-500 hover:bg-red-600"
                               : "bg-green-500 hover:bg-green-600"
                           }`}
-                        onClick={() => handleAction(product._id)}
-                      >
-                        {product.isBlocked ? "Unblock" : "block"}
-                      </button>
+                            onClick={() => handleAction(product._id)}
+                          >
+                            {product.isBlocked ? "Unblock" : "block"}
+                          </button>
                         </div>
                       </td>
                     </tr>

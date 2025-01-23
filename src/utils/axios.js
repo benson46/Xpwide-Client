@@ -5,6 +5,7 @@ export const axiosInstance = axios.create({
     withCredentials:true, // send cookies to the server
 })
 
+
 export const adminAxiosInstance = axios.create({
     baseURL:"http://localhost:5000/api/admin",
     withCredentials:true, 

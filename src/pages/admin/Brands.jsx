@@ -9,9 +9,9 @@ import { adminAxiosInstance } from "../../utils/axios";
 
 export default function Brands() {
   const [isAddBrandModalOpen, setIsAddBrandModalOpen] = useState(false);
-  const [isEditBrandModalOpen, setIsEditBrandModalOpen] = useState(false)
+  const [isEditBrandModalOpen, setIsEditBrandModalOpen] = useState(false);
   const [brands, setBrands] = useState([]);
-  const [selectedBrand, setSelectedBrand] = useState(null); 
+  const [selectedBrand, setSelectedBrand] = useState(null);
 
   const fetchBrand = async () => {
     try {
@@ -29,9 +29,20 @@ export default function Brands() {
 
   const handleAddBrand = async (formData) => {
     try {
+      const isBrandExist = brands.some(
+        (brand) => brand.title.toLowerCase() === formData.title.toLowerCase()
+      );
+      console.log(isBrandExist);
+
+      if (isBrandExist) {
+        toast.error("Brand should be unique");
+        return;
+      }
+
       await adminAxiosInstance.post("/brands", formData);
-      fetchBrand();
       toast.success("Brand added successfully!");
+
+      fetchBrand();
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error adding brand.");
@@ -40,8 +51,27 @@ export default function Brands() {
 
   const handleEditBrand = async (updatedBrand) => {
     try {
-      if (updatedBrand.status) {
-        await adminAxiosInstance.put(`/brands/${updatedBrand._id}`, updatedBrand);
+      if (updatedBrand) {
+        const isBrandExist = brands.some((brand) => {
+          if (
+            brand.title.toLowerCase() === updatedBrand.title.toLowerCase() &&
+            brand._id != updatedBrand._id
+          ) {
+            return true;
+          }
+          return false;
+        });
+        console.log(isBrandExist);
+
+        if (isBrandExist) {
+          toast.error("Brand should be unique");
+          return;
+        }
+
+        await adminAxiosInstance.put(
+          `/brands/${updatedBrand._id}`,
+          updatedBrand
+        );
         fetchBrand();
         toast.success("Brand updated successfully!");
       } else {
@@ -97,7 +127,7 @@ export default function Brands() {
                 </thead>
                 <tbody>
                   {brands.length > 0 ? (
-                    brands.map((brand,index) => (
+                    brands.map((brand, index) => (
                       <tr key={index} className="border-b border-gray-800">
                         <td className="py-3 px-4">{brand.title}</td>
                         <td className="py-3 px-4 text-center">

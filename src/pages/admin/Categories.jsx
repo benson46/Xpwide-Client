@@ -29,9 +29,19 @@ export default function Categories() {
 
   const handleAddCategory = async (formData) => {
     try {
+      const isCategoryExist = categories.some(
+        (category) =>
+          category.title.toLowerCase() === formData.title.toLowerCase()
+      );
+
+      if (isCategoryExist) {
+        toast.error("Category should be unique");
+        return;
+      }
+
       await adminAxiosInstance.post("/category", formData);
-      fetchCategory();
       toast.success("Category added successfully!");
+      fetchCategory();
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error adding category.");
@@ -40,6 +50,20 @@ export default function Categories() {
 
   const handleEditCategory = async (updatedCategory) => {
     try {
+      const isCategoryExist = categories.some((category) => {
+        if (
+          category.title.toLowerCase() === updatedCategory.title.toLowerCase()
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      if (isCategoryExist) {
+        toast.error("Category should be unique");
+        return;
+      }
+
       await adminAxiosInstance.put(
         `/category/${updatedCategory._id}`,
         updatedCategory

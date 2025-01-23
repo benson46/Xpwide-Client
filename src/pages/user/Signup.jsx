@@ -3,12 +3,11 @@ import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import validate from "../../utils/validate";
 import { axiosInstance } from "../../utils/axios";
-import toast from "react-hot-toast";
 
 export default function Signup() {
   const { loading } = useSelector((state) => state.user);
   const [error, setError] = useState(null);
-  const [validateError, setValidateError] = useState(null);
+  const [validateError, setValidateError] = useState({});
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -22,30 +21,28 @@ export default function Signup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError("");
-    setValidateError(null);
+    setError(null);
+    setValidateError({});
 
-    if (formData.confirmPassword != formData.password) {
-      return setError("Password and Conform Password is Not match");
+    if (formData.confirmPassword !== formData.password) {
+      return setValidateError({ confirmPassword: "Passwords do not match." });
     }
 
-    const validateError = validate(formData);
-    setValidateError(validateError);
-
-    if (Object.keys(validateError).length >= 4) {
-      setError("Please enter the details properly");
+    const validationErrors = validate(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setValidateError(validationErrors);
       return;
     }
 
-    if (Object.keys(validateError).length === 0) {
-      try {
-        await axiosInstance.post("/send-otp", { formData });
-        navigate("/otp-verification", {
-          state: { email: formData.email, from: "signup" },
-        });
-      } catch (error) {
-        toast.error(error.response.data.message);
-      }
+    try {
+      await axiosInstance.post("/send-otp", { formData });
+      navigate("/otp-verification", {
+        state: { email: formData.email, from: "signup" },
+      });
+    } catch (error) {
+      setValidateError({
+        general: error.response?.data?.message || "Something went wrong.",
+      });
     }
   };
 
@@ -55,20 +52,22 @@ export default function Signup() {
       ...prevState,
       [name]: value,
     }));
+    setValidateError((prevErrors) => ({
+      ...prevErrors,
+      [name]: null, // Clear the error for the field being updated
+    }));
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      {/* <div className="mb-8">
-        <img src="/logo.png" alt="XPWide Logo" className="h-8 w-auto" />
-      </div> */}
-
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold text-center mb-8">
           Account Signup
         </h1>
 
-        {error && <p className="text-red-600">{error}</p>}
+        {validateError.general && (
+          <p className="text-red-600 text-center">{validateError.general}</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -78,8 +77,8 @@ export default function Signup() {
             >
               First name
             </label>
-            {validateError?.firstName && (
-              <p className="text-red-600">{validateError.firstName}</p>
+            {validateError.firstName && (
+              <p className="text-red-600 text-sm">{validateError.firstName}</p>
             )}
             <input
               type="text"
@@ -98,10 +97,9 @@ export default function Signup() {
             >
               Last name
             </label>
-            {validateError?.lastName && (
-              <p className="text-red-600">{validateError.lastName}</p>
+            {validateError.lastName && (
+              <p className="text-red-600 text-sm">{validateError.lastName}</p>
             )}
-
             <input
               type="text"
               id="lastName"
@@ -119,10 +117,9 @@ export default function Signup() {
             >
               Email Address
             </label>
-            {validateError?.email && (
-              <p className="text-red-600">{validateError.email}</p>
+            {validateError.email && (
+              <p className="text-red-600 text-sm">{validateError.email}</p>
             )}
-
             <input
               type="email"
               id="email"
@@ -140,10 +137,9 @@ export default function Signup() {
             >
               Phone Number
             </label>
-            {validateError?.phoneNumber && (
-              <p className="text-red-600">{validateError.phoneNumber}</p>
+            {validateError.phoneNumber && (
+              <p className="text-red-600 text-sm">{validateError.phoneNumber}</p>
             )}
-
             <input
               type="tel"
               id="phoneNumber"
@@ -161,12 +157,11 @@ export default function Signup() {
             >
               Password
             </label>
-            {validateError?.password && (
-              <p className="text-red-600">{validateError.password}</p>
+            {validateError.password && (
+              <p className="text-red-600 text-sm">{validateError.password}</p>
             )}
-
             <input
-              type="text"
+              type="password"
               id="password"
               name="password"
               value={formData.password}
@@ -182,8 +177,13 @@ export default function Signup() {
             >
               Confirm password
             </label>
+            {validateError.confirmPassword && (
+              <p className="text-red-600 text-sm">
+                {validateError.confirmPassword}
+              </p>
+            )}
             <input
-              type="text"
+              type="password"
               id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
