@@ -1,7 +1,8 @@
 import axios from "axios";
 import { showErrorToast } from "./toastUtils";
 import { showCustomAlert } from "./customAlert";
-
+import store from '../store/store'
+import { logout } from "../store/adminSlice";
 // Create Axios instance
 export const axiosInstance = axios.create({
   baseURL: "http://localhost:5000/api/user",
@@ -12,9 +13,10 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem("user"));
-    const email = user.email
+
+    const email = user?.email || "";
     console.log(email)
-    const authToken = user.accessToken;
+    const authToken = user?.accessToken || null;
     console.log(authToken)
 
     if (!email) {
@@ -71,7 +73,51 @@ export const adminAxiosInstance = axios.create({
   withCredentials: true,
 });
 
+
 export const googleAxiosInstance = axios.create({
   baseURL: "http://localhost:5000/api/google",
   withCredentials: true,
 });
+
+
+
+adminAxiosInstance.interceptors.request.use(
+  (config) => {
+    const admin = JSON.parse(localStorage.getItem('adminInfo'));
+   if(admin){
+    const { accessToken } =  admin;
+    if(accessToken){
+      config.headers['Authorization'] = `Bearer ${accessToken}`
+    }
+   }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+
+adminAxiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    console.log(error)
+    if( error.response.status === 401 && !originalRequest._retry){
+      try {
+        const resultAction = await adminAxiosInstance.post('/refresh-access-token');
+        console.log('ivda ethia')
+
+        const admin =JSON.parse( localStorage.getItem('adminInfo'));
+        console.log(admin)
+        admin.accessToken = resultAction.data.accessToken;
+
+        localStorage.setItem('adminInfo', JSON.stringify(admin));
+        return adminAxiosInstance(originalRequest);
+
+      } catch (error) {
+        store.dispatch(logout());
+        return Promise.reject(error)
+      }
+    }
+  }
+)
