@@ -53,7 +53,6 @@ export default function ProductDetails() {
           },
         });
         setRelatedProducts(relatedProducts.data.products);
-        console.log(relatedProducts);
       }
     };
     fetchProductDetail();
