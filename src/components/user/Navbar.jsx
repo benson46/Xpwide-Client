@@ -15,34 +15,7 @@ function Navbar() {
   const dispatch = useDispatch();
   const isLoggedIn = !!user;
 
-  useEffect(() => {
-    if(user){
-      const verifyUserStatus = async () => {
-        const accessToken = JSON.parse(localStorage.getItem('user'))?.accessToken;
-        console.log(accessToken)
-        try {
-          const response = await axiosInstance.get("/verify-user-status", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
   
-            
-          });
-          console.log(response.data);
-        } catch (error) {
-          console.error("Error checking user status:", error);
-        }
-      };
-      
-  
-      verifyUserStatus();
-    }
-  }, []);
-  
-  
-  
-  
-
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };

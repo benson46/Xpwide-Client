@@ -1,35 +1,14 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { logout } from "../../store/adminSlice"; // Import the logout action
 import { Search, User, LogOut } from "lucide-react";
 import { adminAxiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 
 export default function Navbar() {
   const dispatch = useDispatch(); // Dispatch function from Redux
   const navigate = useNavigate();
-  const admin = useSelector((state)=>state.admin.adminInfo)
-  console.log(JSON.stringify(admin))
-  useEffect(()=>{
-    if(admin){
-      const verifyAdminStatus = async()=>{
-        const accessToken = JSON.parse(localStorage.getItem('adminInfo'))?.accessToken;
-        console.log(accessToken)
-        try {
-          const response = await adminAxiosInstance.get('/verify-admin-status',{
-            headers:{
-              Authorization:`Bearer ${accessToken}`,
-            }
-          });
-          console.log(response.data)
-        } catch (error) {
-          console.log("Error checking user status:",error)
-        }
-      }
-      verifyAdminStatus();
-    }
-  },[])
+
   const handleLogout = async () => {
     try {
       const response = await adminAxiosInstance.post("/logout");

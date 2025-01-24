@@ -2,16 +2,26 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { axiosInstance } from '../../utils/axios'; // Make sure to import axiosInstance
 
 export default function ResetPasswordEmail() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState(''); // State for handling errors
   const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/otp-verification', { state: { email, from: 'reset-password' } });
-    console.log('Reset password for:', email);
+    try {
+      const response = await axiosInstance.post("/resend-otp", { email });
+      console.log('Reset password for:', email);
+
+      // If request is successful, navigate to OTP verification page
+      navigate('/otp-verification', { state: { email, from: 'reset-password' } });
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      setError('Failed to send OTP. Please try again.');
+    }
   };
-  
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-100">
@@ -20,6 +30,9 @@ export default function ResetPasswordEmail() {
         <p className="text-center text-gray-600 mb-6">
           Enter your registered Email
         </p>
+        
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>} {/* Display error message */}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -38,5 +51,5 @@ export default function ResetPasswordEmail() {
         </form>
       </div>
     </div>
-  )
+  );
 }

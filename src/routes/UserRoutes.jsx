@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Homepage from "../pages/user/Homepage";
 import Signup from "../pages/user/Signup";
 import Login from "../pages/user/Login";
@@ -14,57 +14,68 @@ import Navbar from "../components/user/Navbar";
 import Cart from "../pages/user/Cart";
 
 function UserRoutes() {
+  const location = useLocation();
+
+  // Only render Navbar if the current route is not one of the excluded ones
+  const showNavbar = ![
+    '/signup',
+    '/login',
+    '/otp-verification',
+    '/reset-password-email',
+    '/reset-password'
+  ].includes(location.pathname);
+
   return (
     <>
-    <Navbar/>
-    <Routes>
-      <Route index element={<Homepage />} />
-      <Route
-        path="signup"
-        element={
-          <UserRequireAuth>
-            <Signup />
-          </UserRequireAuth>
-        }
-      />
-      <Route
-        path="login"
-        element={
-          <UserRequireAuth>
-            <Login />
-          </UserRequireAuth>
-        }
-      />
-      <Route
-        path="otp-verification"
-        element={
-          <UserRequireAuth>
-            <OTPVerification />
-          </UserRequireAuth>
-        }
-      />
-      <Route
-        path="reset-password-email"
-        element={
-          <UserRequireAuth>
-            <ResetPasswordEmail />
-          </UserRequireAuth>
-        }
-      />
-      <Route
-        path="reset-password"
-        element={
-          <UserRequireAuth>
-            <ResetPassword />
-          </UserRequireAuth>
-        }
-      />
-      <Route path="shop-page" element={<ShopPage/>}/>
-      <Route path="product/:productId" element={<ProductDetails />} />
-      <Route path="orders" element={<Orders/>} />
-      <Route path="order-detials" element={<OrderDetails/>} />
-      <Route path="cart" element={<Cart/>} />
-      <Route path="*" element={<>404 PAGE NOT FOUND</>} />
+      {showNavbar && <Navbar />} {/* Conditionally render Navbar */}
+      <Routes>
+        <Route
+          path="signup"
+          element={
+            <UserRequireAuth>
+              <Signup />
+            </UserRequireAuth>
+          }
+        />
+        <Route
+          path="login"
+          element={
+            <UserRequireAuth>
+              <Login />
+            </UserRequireAuth>
+          }
+        />
+        <Route
+          path="otp-verification"
+          element={
+            <UserRequireAuth>
+              <OTPVerification />
+            </UserRequireAuth>
+          }
+        />
+        <Route
+          path="reset-password-email"
+          element={
+            <UserRequireAuth>
+              <ResetPasswordEmail />
+            </UserRequireAuth>
+          }
+        />
+        <Route
+          path="reset-password"
+          element={
+            <UserRequireAuth>
+              <ResetPassword />
+            </UserRequireAuth>
+          }
+        />
+        <Route index element={<Homepage />} />
+        <Route path="shop-page" element={<ShopPage />} />
+        <Route path="product/:productId" element={<ProductDetails />} />
+        <Route path="orders" element={<Orders />} />
+        <Route path="order-detials" element={<OrderDetails />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="*" element={<>404 PAGE NOT FOUND</>} />
       </Routes>
     </>
   );

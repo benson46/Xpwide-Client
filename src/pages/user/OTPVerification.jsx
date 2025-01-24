@@ -14,18 +14,7 @@ export default function OTPVerification() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const sendOtp = async () => {
-      try {
-        const response = await axiosInstance.post('/resend-otp', { email: location.state?.email });
-        toast.success('OTP sent successfully');
-      } catch (error) {
-        toast.error('Failed to send OTP');
-      }
-    };
-  
-    sendOtp();
-  }, []); 
+
   
   useEffect(() => {
     
