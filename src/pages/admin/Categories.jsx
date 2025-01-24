@@ -17,6 +17,7 @@ export default function Categories() {
     try {
       const response = await adminAxiosInstance.get("/category");
       setCategories(response.data.categories || []);
+      console.log(response.data.categories)
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch categories.");
@@ -112,7 +113,7 @@ export default function Categories() {
                 <thead>
                   <tr className="text-left border-b border-gray-800">
                     <th className="text-left py-3 px-4">CATEGORY</th>
-                    <th className="py-3 px-4 text-center">DESCRIPTION</th>
+                    <th className="py-3 px-4 text-center">ICON</th>
                     <th className="py-3 px-4">ACTION</th>
                   </tr>
                 </thead>
@@ -125,14 +126,7 @@ export default function Categories() {
                       >
                         <td className="py-3 px-4">{category.title}</td>
                         <td className="py-3 px-4 text-center">
-                          {(category.description || "No description available")
-                            .split(" ")
-                            .map((word, index) => (
-                              <span key={index}>
-                                {word}
-                                {index === 2 ? <br /> : " "}
-                              </span>
-                            ))}
+                          {category.icon}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">

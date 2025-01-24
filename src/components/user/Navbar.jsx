@@ -5,7 +5,7 @@ import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react";
 import { Button } from "../ui/Buttons";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { checkUserStatus, logout } from "../../store/userSlice";
+import { logout } from "../../store/userSlice";
 import { axiosInstance } from "../../utils/axios";
 
 function Navbar() {
@@ -16,25 +16,27 @@ function Navbar() {
   const isLoggedIn = !!user;
 
   useEffect(() => {
-    const verifyUserStatus = async () => {
-      const accessToken = JSON.parse(localStorage.getItem('user'))?.accessToken;
-      console.log(accessToken)
-      try {
-        const response = await axiosInstance.get("/verify-user-status", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-
-          
-        });
-        console.log(response.data);
-      } catch (error) {
-        console.error("Error checking user status:", error);
-      }
-    };
-    
-
-    verifyUserStatus();
+    if(user){
+      const verifyUserStatus = async () => {
+        const accessToken = JSON.parse(localStorage.getItem('user'))?.accessToken;
+        console.log(accessToken)
+        try {
+          const response = await axiosInstance.get("/verify-user-status", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+  
+            
+          });
+          console.log(response.data);
+        } catch (error) {
+          console.error("Error checking user status:", error);
+        }
+      };
+      
+  
+      verifyUserStatus();
+    }
   }, []);
   
   

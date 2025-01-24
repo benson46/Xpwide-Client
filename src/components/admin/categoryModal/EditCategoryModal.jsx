@@ -10,7 +10,7 @@ export default function EditCategoryModal({
   const [formData, setFormData] = useState({
     categoryId: "",
     title: "",
-    description: "",
+    icon: "",
   });
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function EditCategoryModal({
       setFormData({
         categoryId: category._id,
         title: category.title,
-        description: category.description,
+        icon: category.icon,
       });
     }
   }, [category]);
@@ -61,19 +61,18 @@ export default function EditCategoryModal({
 
         <div>
           <label
-            htmlFor="description"
+            htmlFor="icon"
             className="block text-sm font-medium text-white mb-2"
           >
-            Description
+            icon
           </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
+          <input
+            id="icon"
+            name="icon"
+            value={formData.icon}
             onChange={handleChange}
-            rows={4}
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-yellow-500"
-            placeholder="Description"
+             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-yellow-500"
+            placeholder="icon"
             required
           />
         </div>

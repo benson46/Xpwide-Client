@@ -4,13 +4,13 @@ import Modal from "../Modal";
 export default function AddCategoryModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    icon: "",
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ title: "", description: "" });
+    setFormData({ title: "", icon: "" });
     onClose();
   };
 
@@ -27,6 +27,26 @@ export default function AddCategoryModal({ isOpen, onClose, onSubmit }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
+            htmlFor="icon"
+            className="block text-sm font-medium text-white mb-2"
+          >
+            Category Icon
+          </label>
+          <input
+            type="text"
+            id="icon"
+            name="icon"
+            value={formData.icon}
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-yellow-500"
+            placeholder="icon text"
+            required
+          />
+          
+        </div>
+
+        <div>
+          <label
             htmlFor="title"
             className="block text-sm font-medium text-white mb-2"
           >
@@ -40,25 +60,6 @@ export default function AddCategoryModal({ isOpen, onClose, onSubmit }) {
             onChange={handleChange}
             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-yellow-500"
             placeholder="Category Name"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-white mb-2"
-          >
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-yellow-500"
-            placeholder="Description"
             required
           />
         </div>

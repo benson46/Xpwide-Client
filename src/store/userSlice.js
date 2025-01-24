@@ -48,19 +48,6 @@ export const logout = createAsyncThunk(
 );
 
 
-export const checkUserStatus = createAsyncThunk(
-  "user/checkStatus",
-  async (_, { rejectWithValue }) => {
-    try {
-      const userId = JSON.parse(localStorage.getItem("user"))._id;
-      const response = await adminAxiosInstance.get(`/check-status?userId=${userId}`);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Error checking status");
-    }
-  }
-);
-
 
 
 
@@ -122,19 +109,6 @@ const userSlice = createSlice({
         state.loading = false;
       })
       .addCase(logout.rejected, (state) => {
-        state.loading = false;
-      });
-      builder
-      .addCase(checkUserStatus.fulfilled, (state, action) => {
-        // If user is blocked, clear the user session
-        if (action.payload.message === "User is blocked") {
-          state.user = null;
-          state.isAuthenticated = false;
-          localStorage.removeItem("user");
-          toast.error("Your account is blocked.");
-        }
-      })
-      .addCase(checkUserStatus.rejected, (state, action) => {
         state.loading = false;
       });
   },

@@ -8,7 +8,7 @@ const ProductCard = ({ _id, name, price, discount, images, onClick}) => {
         <img
           src={images[0]}
           alt={name}
-          className="w-full h-48 object-cover rounded-lg"
+          className="w-full h-[400px] object-cover rounded-lg"
         />
         {discount && (
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs rounded">

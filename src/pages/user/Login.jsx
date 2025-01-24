@@ -4,6 +4,7 @@ import { googleAxiosInstance } from "../../utils/axios";
 import { useDispatch } from "react-redux";
 import { googleLogin, login } from "../../store/userSlice";
 import { GoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -48,16 +49,18 @@ export default function Login() {
       dispatch(googleLogin(response.credential)).then(() => {
         navigate("/");
       });
+      toast.success("Login successful!");
     } catch (error) {
-      toast.error(`Google login failed ${error}`)
-      console.error(error);
+      toast.error(error.response.data.message)
     }
   };
-
+  
   const errorMessage = (error) => {
+    toast.error(`Google login failed: ${error}`);
     console.error(error);
     setErrors({ google: "Google login failed. Please try again." });
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();

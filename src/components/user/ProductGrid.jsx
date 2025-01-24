@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { axiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const ProductGrid = () => {
   const [products, setProducts] = useState([]);
@@ -18,7 +19,7 @@ const ProductGrid = () => {
         });
         setProducts(response.data.products);
       } catch (error) {
-        console.error("Failed to fetch products:", error);
+        toast.error("Failed to fetch products:", error);
       } finally {
         setLoading(false);
       }

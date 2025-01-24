@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAxiosInstance } from "../utils/axios";
-
+import toast from "react-hot-toast";
 // Async Thunks
 export const adminLogin = createAsyncThunk(
   "admin/login",
@@ -13,6 +13,7 @@ export const adminLogin = createAsyncThunk(
 
       return adminData;
     } catch (error) {
+      toast.error(error.response?.data?.message)
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
   }

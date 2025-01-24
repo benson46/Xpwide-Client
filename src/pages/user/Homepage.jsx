@@ -10,7 +10,6 @@ export default function Homepage() {
 
   return (
     <div>
-      <Navbar />
       <Banner />
       <Categories />
       <ProductGrid />
