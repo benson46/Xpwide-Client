@@ -9,7 +9,8 @@ export default function UsersPage() {
   const itemsPerPage = 10;
 
   const [users, setUsers] = useState([]);
-  const fetchUSerList = async () => {
+
+  const fetchUserList = async () => {
     const response = await adminAxiosInstance.get("/users-list", {
       params: {
         page: currentPage,
@@ -20,12 +21,12 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUSerList();
+    fetchUserList();
   }, []);
 
   const handleAction = async (userId) => {
     const response = await adminAxiosInstance.patch("/users-list", { userId });
-    fetchUSerList();
+    fetchUserList();
   };
 
   const totalPages = Math.ceil(users.length / itemsPerPage);

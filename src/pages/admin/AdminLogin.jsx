@@ -21,7 +21,9 @@ export default function AdminLogin() {
           toast.success("Login success");
           navigate("/admin/dashboard");
         });
-    } catch (error) {}
+    } catch (error) {
+      toast.error(error)
+    }
   };
 
   const handleChange = (e) => {

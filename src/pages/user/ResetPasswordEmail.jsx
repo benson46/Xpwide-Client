@@ -12,16 +12,16 @@ export default function ResetPasswordEmail() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post("/resend-otp", { email });
-      console.log('Reset password for:', email);
-
-      // If request is successful, navigate to OTP verification page
+      const response = await axiosInstance.post("/forget-password-otp", { email });
+      console.log(response);
       navigate('/otp-verification', { state: { email, from: 'reset-password' } });
     } catch (error) {
-      console.error('Error sending OTP:', error);
-      setError('Failed to send OTP. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Failed to send OTP.';
+      setError(errorMessage); // Display custom error message
+      console.log('Error sending OTP:', error.response);
     }
   };
+  
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-100">

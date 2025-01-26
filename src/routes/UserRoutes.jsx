@@ -6,12 +6,15 @@ import OTPVerification from "../pages/user/OTPVerification";
 import ResetPasswordEmail from "../pages/user/ResetPasswordEmail";
 import ResetPassword from "../pages/user/ResetPassword";
 import ProductDetails from "../pages/user/ProductDetials";
-import { UserAuth, UserRequireAuth } from "../components/private/userProtectedRoute";
+import { UserRequireAuth } from "../components/private/userProtectedRoute";
 import ShopPage from "../pages/user/ShopPage";
 import Orders from "../pages/user/Orders";
 import OrderDetails from "../pages/user/OrderDetials";
 import Navbar from "../components/user/Navbar";
 import Cart from "../pages/user/Cart";
+import Profile from '../pages/user/Profile'
+import ChangePassword from "../pages/user/ChangePassword";
+import ManageAddress from "../pages/user/MangaeAddress";
 
 function UserRoutes() {
   const location = useLocation();
@@ -22,7 +25,8 @@ function UserRoutes() {
     '/login',
     '/otp-verification',
     '/reset-password-email',
-    '/reset-password'
+    '/reset-password',
+    '/change-password'
   ].includes(location.pathname);
 
   return (
@@ -72,6 +76,9 @@ function UserRoutes() {
         <Route index element={<Homepage />} />
         <Route path="shop-page" element={<ShopPage />} />
         <Route path="product/:productId" element={<ProductDetails />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="change-password" element={<ChangePassword />} />
+        <Route path="address" element={<ManageAddress />} />
         <Route path="orders" element={<Orders />} />
         <Route path="order-detials" element={<OrderDetails />} />
         <Route path="cart" element={<Cart />} />

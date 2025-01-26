@@ -161,7 +161,7 @@ export default function Signup() {
               <p className="text-red-600 text-sm">{validateError.password}</p>
             )}
             <input
-              type="password"
+              type="text"
               id="password"
               name="password"
               value={formData.password}
@@ -183,7 +183,7 @@ export default function Signup() {
               </p>
             )}
             <input
-              type="password"
+              type="text"
               id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}

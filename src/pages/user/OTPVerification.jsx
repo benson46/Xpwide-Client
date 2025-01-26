@@ -9,7 +9,7 @@ export default function OTPVerification() {
     otp: "",
     email: location.state?.email, // email passed from the previous page
   });
-  const [timeLeft, setTimeLeft] = useState(60); 
+  const [timeLeft, setTimeLeft] = useState(5); 
   const [isResendDisabled, setIsResendDisabled] = useState(true); 
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function OTPVerification() {
   };
 
   const handleResendOTP = async () => {
-    setTimeLeft(60); 
+    setTimeLeft(5); 
     setIsResendDisabled(true);
     try {
       await axiosInstance.post("/resend-otp", { email: location.state?.email });
@@ -58,7 +58,7 @@ export default function OTPVerification() {
         await axiosInstance.post("/resend-otp", data);
         navigate("/reset-password", { state: { email: data.email } });
       } else if (location.state?.from === "signup") {
-        await axiosInstance.post("/verify-signup-otp", data);
+        await axiosInstance.post("/verify-otp", data);
         navigate("/login");
         toast.success("Signup successful. Please login.");
       } else {

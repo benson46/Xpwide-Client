@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { logout } from "../../store/adminSlice"; // Import the logout action
+import {  logoutAdmin } from "../../store/adminSlice"; // Import the logout action
 import { Search, User, LogOut } from "lucide-react";
 import { adminAxiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +13,7 @@ export default function Navbar() {
     try {
       const response = await adminAxiosInstance.post("/logout");
       if (response) {
-        dispatch(logout());
+        dispatch(logoutAdmin());
         localStorage.removeItem("adminInfo");
         navigate("/admin");
         toast.success("Logout Success");

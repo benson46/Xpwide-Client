@@ -1,236 +1,140 @@
-import { useState } from "react"
-import Sidebar from "../components/Sidebar"
+"use client";
+
+import { useEffect, useState } from "react";
+import Sidebar from "../../components/user/Sidebar";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../utils/axios";
 
 export default function Profile() {
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const user = useSelector((state) => state.user?.user);
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+  });
+
+  useEffect(() => {
+    if (!user) {
+      toast.error("Please Login to continue");
+      navigate("/login");
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        const response = await axiosInstance.get("/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.success) {
+          const { userData } = response.data;
+          setFormData({
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || "",
+            phoneNumber: userData.phoneNumber || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        toast.error("Failed to load user profile.");
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, navigate]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setIsEditing(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axiosInstance.put(
+        "/profile",
+        { ...formData },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Profile updated successfully!");
+        setIsEditing(false);
+      } else {
+        toast.error("Failed to update profile.");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("An error occurred while updating the profile.");
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">USER PROFILE</h1>
-          <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
-            Log Out
-          </button>
-        </div>
 
         <div className="flex gap-8">
           <div className="flex-1">
-            <p className="text-sm text-gray-500 mb-4">Your information is safe with us</p>
-            <form className="space-y-6">
+            <p className="text-sm text-gray-500 mb-4">
+              Your information is safe with us
+            </p>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <div className="relative">
-                    <input type="text" defaultValue="Sharoosh" className="w-full px-3 py-2 border rounded-md pr-10" />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <div className="relative">
-                    <input type="text" defaultValue="B" className="w-full px-3 py-2 border rounded-md pr-10" />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <div className="relative">
+                {Object.entries(formData).map(([key, value]) => (
+                  <div key={key} className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {key.charAt(0).toUpperCase() +
+                        key.slice(1).replace(/([A-Z])/g, " $1")}
+                    </label>
                     <input
-                      type="email"
-                      defaultValue="shar@gmail.com"
-                      className="w-full px-3 py-2 border rounded-md pr-10"
+                      type={
+                        key === "email"
+                          ? "email"
+                          : key === "phoneNumber"
+                          ? "tel"
+                          : "text"
+                      }
+                      name={key}
+                      value={value}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border rounded-md hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      disabled={key === "email"} // Disable editing email
                     />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
                   </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      defaultValue="+919876543210"
-                      className="w-full px-3 py-2 border rounded-md pr-10"
-                    />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <div className="relative">
-                    <input type="text" defaultValue="India" className="w-full px-3 py-2 border rounded-md pr-10" />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <div className="relative">
-                    <input type="text" defaultValue="Kerala" className="w-full px-3 py-2 border rounded-md pr-10" />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">DOB</label>
-                  <div className="relative">
-                    <input type="text" defaultValue="16-12-2003" className="w-full px-3 py-2 border rounded-md pr-10" />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      defaultValue="********"
-                      className="w-full px-3 py-2 border rounded-md pr-10"
-                    />
-                    <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-
-              <button
-                type="submit"
-                className="w-full py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-              >
-                SAVE CHANGES
-              </button>
-            </form>
-          </div>
-
-          <div className="w-64 space-y-4">
-            <div className="aspect-square relative group">
-              <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-I3fupHXOnGpZabXyQH0vYkGaFqPrL9.png"
-                alt="Profile"
-                className="w-full h-full object-cover rounded-lg"
-              />
-              {showDeleteConfirm ? (
-                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 rounded-lg">
-                  <p className="text-white text-sm text-center px-4">
-                    Are you sure you want to delete your profile photo?
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Handle delete
-                        setShowDeleteConfirm(false)
-                      }}
-                      className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ) : (
+              {isEditing && (
                 <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                  type="submit"
+                  className="w-full py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
+                  Save Changes
                 </button>
               )}
-            </div>
-            <button className="w-full py-2 px-4 bg-black text-white rounded-md hover:bg-gray-800 transition-colors">
-              CHANGE PHOTO
-            </button>
+            </form>
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }
-

@@ -3,10 +3,9 @@
 import { Link } from "react-router-dom";
 import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react";
 import { Button } from "../ui/Buttons";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/userSlice";
-import { axiosInstance } from "../../utils/axios";
 
 function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
