@@ -9,6 +9,12 @@ import { axiosInstance } from "../../utils/axios";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const user = useSelector((state) => state.user?.user);
   const navigate = useNavigate();
 
@@ -88,11 +94,57 @@ export default function Profile() {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New password and confirm password do not match!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axiosInstance.put(
+        "/profile/change-password",
+        {
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Password updated successfully!");
+        setIsPasswordModalOpen(false);
+        setPasswordData({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        toast.error(response.data.message || "Failed to update password.");
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error("An error occurred while updating the password.");
+    }
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 p-8">
-
         <div className="flex gap-8">
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-4">
@@ -132,8 +184,80 @@ export default function Profile() {
                 </button>
               )}
             </form>
+            <button
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="mt-6 w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Change Password
+            </button>
           </div>
         </div>
+        {isPasswordModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-md shadow-lg w-1/3">
+              <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Old Password
+                  </label>
+                  <input
+                    type="password"
+                    name="oldPassword"
+                    value={passwordData.oldPassword}
+                    onChange={handlePasswordInputChange}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordInputChange}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordInputChange}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <button
+                    type="submit"
+                    className="py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/resetpassword")}
+                    className="text-blue-500 hover:underline"
+                  >
+                    Forgot Old Password?
+                  </button>
+                </div>
+              </form>
+              <button
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="mt-4 py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

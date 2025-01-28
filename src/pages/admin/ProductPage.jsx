@@ -72,11 +72,14 @@ export default function ProductPage() {
   };
 
   const handleEditProduct = async (formData) => {
-    console.log(formData)
     try {
-      const isProductExist = products.some(
-        (product) => product.name.toLowerCase() === formData.name.toLowerCase()
-      );
+      const isProductExist = products.some((product, index) => {
+        console.log(product.name.toLowerCase(), formData.name.toLowerCase());
+        return (
+          product.name.toLowerCase() === formData.name.toLowerCase() &&
+          index !== formData.index // Skip the same index
+        );
+      });
 
       if (isProductExist) {
         toast.error("Product must be unique");
@@ -88,7 +91,7 @@ export default function ProductPage() {
       fetchProduct();
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Error updating category.");
+      toast.error(error.response?.data?.message || "Error updating product.");
     }
   };
 
@@ -216,9 +219,16 @@ export default function ProductPage() {
             title="Edit Product"
           >
             <EditProduct
-              onClose={() => setIsEditModalOpen(false)} // Ensure this updates the state
+              onClose={() => setIsEditModalOpen(false)}
               products={selectedProduct}
-              onUpdate={handleEditProduct}
+              onUpdate={(updatedProduct) =>
+                handleEditProduct({
+                  ...updatedProduct,
+                  index: products.findIndex(
+                    (p) => p._id === selectedProduct._id
+                  ),
+                })
+              }
               brands={brands}
               categories={categories}
             />

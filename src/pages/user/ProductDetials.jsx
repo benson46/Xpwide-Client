@@ -74,6 +74,26 @@ export default function ProductDetails() {
     setZoomPosition({ x, y });
   };
 
+  const handleAddToCart = async (productId) => {
+    if (quantity > product.stock || quantity > 5) {
+      toast.error("Selected quantity exceeds stock available");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post("/cart", {
+        productId,
+        quantity,
+      });
+      if (response.status === 200) {
+        toast.success("Product added to cart successfully");
+      }
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      toast.error("Failed to add product to cart");
+    }
+  };
+
   return (
     <>
       <div className="container mx-auto px-4 py-8">
@@ -173,15 +193,36 @@ export default function ProductDetails() {
                     <input
                       type="number"
                       min="1"
+                      max={Math.min(product.stock, 5)} // Limit the max to the smaller value between stock and 5
                       value={quantity}
-                      max={product.stock}
-                      onChange={(e) => setQuantity(parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value > product.stock) {
+                          toast.error("Quantity exceeds available stock");
+                          setQuantity(product.stock); // Reset to max stock
+                        } else if (value > 5) {
+                          toast.error("You cannot purchase more than 5 units");
+                          setQuantity(5); // Reset to max 5
+                        } else if (value >= 1) {
+                          setQuantity(value); // Valid value
+                        }
+                      }}
                       className="w-24 border text-center p-2 rounded"
                     />
                   </div>
-                  <button className="flex-1 bg-orange-500 text-white px-5 py-2 rounded">
+
+                  <button
+                    className={`flex-1 bg-orange-500 text-white px-5 py-2 rounded ${
+                      product.stock > 0
+                        ? "hover:bg-orange-600"
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                    onClick={() => handleAddToCart(product._id)}
+                    disabled={product.stock <= 0}
+                  >
                     ADD TO CART
                   </button>
+
                   <button className="py-2 px-5 border rounded flex gap-4 items-center text-gray-700 text-lg font-medium">
                     Wishlist <HeartIcon />
                   </button>
@@ -255,7 +296,6 @@ export default function ProductDetails() {
             <p className="text-gray-500">No related products found.</p>
           )}
         </div>
-
       </div>
     </>
   );

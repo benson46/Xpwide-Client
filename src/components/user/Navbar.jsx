@@ -3,7 +3,7 @@
 import { Link } from "react-router-dom";
 import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react";
 import { Button } from "../ui/Buttons";
-import {  useState } from "react";
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/userSlice";
 
@@ -14,7 +14,6 @@ function Navbar() {
   const dispatch = useDispatch();
   const isLoggedIn = !!user;
 
-  
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -109,14 +108,18 @@ function Navbar() {
                 <Heart className="h-5 w-5" />
                 <span className="sr-only">Wishlist</span>
               </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
                 className="text-white hover:text-gray-300"
               >
-                <ShoppingBag className="h-5 w-5" />
-                <span className="sr-only">Cart</span>
+                <Link to="/cart">
+                  <ShoppingBag className="h-5 w-5" />
+                  <span className="sr-only">Cart</span>
+                </Link>
               </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
