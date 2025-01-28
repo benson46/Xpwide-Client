@@ -42,11 +42,11 @@ function UserRoutes() {
 
         {/* Protected Routes (Requires Authentication) */}
         <Route index element={<Homepage />} />
-        <Route path="shop-page" element={<ShopPage />} />
+        <Route path="shop/:categoryTitle" element={<ShopPage />} />
         <Route path="product/:productId" element={<ProductDetails />} />
-        <Route path="cart" element={<Cart />} />
         
         {/* Wrapping protected routes with UserAuth */}
+        <Route path="cart" element={<UserAuth><Cart /></UserAuth>} />
         <Route path="profile" element={<UserAuth><Profile /></UserAuth>} />
         <Route path="change-password" element={<UserAuth><ChangePassword /></UserAuth>} />
         <Route path="address" element={<UserAuth><ManageAddress /></UserAuth>} />

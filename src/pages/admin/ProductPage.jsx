@@ -1,104 +1,115 @@
-import React, { useState, useEffect } from "react";
-import { PlusCircle, Pencil, Trash2 } from "lucide-react";
-import Modal from "../../components/admin/Modal";
-import AddNewProduct from "../../components/admin/productModal/AddNewProduct";
-import EditProduct from "../../components/admin/productModal/EditProduct";
-import Sidebar from "../../components/admin/Sidebar";
-import Navbar from "../../components/admin/Navbar";
-import { adminAxiosInstance } from "../../utils/axios";
-import toast from "react-hot-toast";
+import React, { useState, useEffect } from "react"
+import { PlusCircle, Pencil, Star } from "lucide-react"
+import Modal from "../../components/admin/Modal"
+import AddNewProduct from "../../components/admin/productModal/AddNewProduct"
+import EditProduct from "../../components/admin/productModal/EditProduct"
+import Sidebar from "../../components/admin/Sidebar"
+import Navbar from "../../components/admin/Navbar"
+import { adminAxiosInstance } from "../../utils/axios"
+import toast from "react-hot-toast"
 
 export default function ProductPage() {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [brands, setBrands] = useState([])
 
   const fetchProduct = async () => {
     try {
-      const response = await adminAxiosInstance.get("/products");
-      setProducts(response.data.products || []);
+      const response = await adminAxiosInstance.get("/products")
+      // Sort products to show featured items first
+      const sortedProducts = (response.data.products || []).sort((a, b) => {
+        if (a.isFeatured === b.isFeatured) return 0
+        return a.isFeatured ? -1 : 1
+      })
+      setProducts(sortedProducts)
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch products.");
+      console.error(error)
+      toast.error("Failed to fetch products.")
     }
-  };
+  }
 
   const fetchCategory = async () => {
     try {
-      const response = await adminAxiosInstance.get("/category");
-      setCategories(response.data.categories || []);
+      const response = await adminAxiosInstance.get("/category")
+      setCategories(response.data.categories || [])
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch categories.");
+      console.error(error)
+      toast.error("Failed to fetch categories.")
     }
-  };
+  }
+
   const fetchBrands = async () => {
     try {
-      const response = await adminAxiosInstance.get("/brands");
-      setBrands(response.data.brands || []);
+      const response = await adminAxiosInstance.get("/brands")
+      setBrands(response.data.brands || [])
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch categories.");
+      console.error(error)
+      toast.error("Failed to fetch categories.")
     }
-  };
+  }
 
   useEffect(() => {
-    fetchProduct();
-    fetchCategory();
-    fetchBrands();
-  }, []);
+    fetchProduct()
+    fetchCategory()
+    fetchBrands()
+  }, [])
 
   const handleAddProduct = async (formData) => {
     try {
-      const isProductExist = products.some(
-        (product) => product.name.toLowerCase() === formData.name.toLowerCase()
-      );
+      const isProductExist = products.some((product) => product.name.toLowerCase() === formData.name.toLowerCase())
 
       if (isProductExist) {
-        toast.error("Product must be unique");
-        return;
+        toast.error("Product must be unique")
+        return
       }
 
-      await adminAxiosInstance.post("/products", formData);
-      toast.success("Product added successfully!");
-      fetchProduct();
+      await adminAxiosInstance.post("/products", formData)
+      toast.success("Product added successfully!")
+      fetchProduct()
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error adding category.");
+      console.error(error)
+      toast.error(error.response?.data?.message || "Error adding category.")
     }
-  };
+  }
 
   const handleEditProduct = async (formData) => {
     try {
       const isProductExist = products.some((product, index) => {
-        console.log(product.name.toLowerCase(), formData.name.toLowerCase());
-        return (
-          product.name.toLowerCase() === formData.name.toLowerCase() &&
-          index !== formData.index // Skip the same index
-        );
-      });
+        return product.name.toLowerCase() === formData.name.toLowerCase() && index !== formData.index
+      })
 
       if (isProductExist) {
-        toast.error("Product must be unique");
-        return;
+        toast.error("Product must be unique")
+        return
       }
 
-      await adminAxiosInstance.put(`/products/${formData.id}`, formData);
-      toast.success("Product updated successfully!");
-      fetchProduct();
+      await adminAxiosInstance.put(`/products/${formData.id}`, formData)
+      toast.success("Product updated successfully!")
+      fetchProduct()
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error updating product.");
+      console.error(error)
+      toast.error(error.response?.data?.message || "Error updating product.")
     }
-  };
+  }
 
   const handleAction = async (productId) => {
-    await adminAxiosInstance.patch("/products", { productId });
-    fetchProduct();
-  };
+    await adminAxiosInstance.patch("/products", { productId })
+    fetchProduct()
+  }
+
+  const handleFeatureToggle = async (productId) => {
+    try {
+      await adminAxiosInstance.patch("/products/feature", { productId })
+      toast.success("Product feature status updated successfully!")
+      fetchProduct()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to update product feature status.")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -122,24 +133,13 @@ export default function ProductPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-800 text-left">
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      PRODUCTS
-                    </th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      CATEGORY
-                    </th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      Brand
-                    </th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      PRICE
-                    </th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      STOCK
-                    </th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-400">
-                      ACTION
-                    </th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">PRODUCTS</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">CATEGORY</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">Brand</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">PRICE</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">STOCK</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">FEATURED</th>
+                    <th className="px-6 py-4 text-sm font-medium text-gray-400">ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -148,33 +148,40 @@ export default function ProductPage() {
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={product.images[0]}
+                            src={product.images[0] || "/placeholder.svg"}
                             alt={product.name}
                             className="h-10 w-10 rounded-lg object-cover"
                           />
-                          <span className="text-sm font-medium text-white">
-                            {product.name}
-                          </span>
+                          <span className="text-sm font-medium text-white">{product.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {product.category?.title || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {product.brand?.title || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {product.price}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {product.stock}
+                      <td className="px-6 py-4 text-sm text-gray-300">{product.category?.title || "N/A"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300">{product.brand?.title || "N/A"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300">{product.price}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300">{product.stock}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleFeatureToggle(product._id)}
+                          className="group rounded-lg p-2 hover:bg-gray-800"
+                        >
+                          <Star
+                            className={`h-5 w-5 transition-colors ${
+                              product.isFeatured
+                                ? "fill-yellow-500 text-yellow-500"
+                                : "text-gray-400 group-hover:text-white"
+                            }`}
+                          />
+                          <span className="sr-only">
+                            {product.isFeatured ? "Remove from featured" : "Add to featured"}
+                          </span>
+                        </button>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => {
-                              setSelectedProduct(product);
-                              setIsEditModalOpen(true);
+                              setSelectedProduct(product)
+                              setIsEditModalOpen(true)
                             }}
                             className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white"
                           >
@@ -182,11 +189,9 @@ export default function ProductPage() {
                           </button>
                           <button
                             className={`px-4 py-1 rounded-md text-sm font-medium uppercase
-                          ${
-                            !product.isBlocked
-                              ? "bg-red-500 hover:bg-red-600"
-                              : "bg-green-500 hover:bg-green-600"
-                          }`}
+                              ${
+                                !product.isBlocked ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                              }`}
                             onClick={() => handleAction(product._id)}
                           >
                             {product.isBlocked ? "Unblock" : "block"}
@@ -200,11 +205,7 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <Modal
-            isOpen={isAddModalOpen}
-            onClose={() => setIsAddModalOpen(false)}
-            title="Add New Product"
-          >
+          <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Product">
             <AddNewProduct
               onClose={() => setIsAddModalOpen(false)}
               categories={categories}
@@ -213,20 +214,14 @@ export default function ProductPage() {
             />
           </Modal>
 
-          <Modal
-            isOpen={isEditModalOpen}
-            onClose={() => setIsEditModalOpen(false)}
-            title="Edit Product"
-          >
+          <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Product">
             <EditProduct
               onClose={() => setIsEditModalOpen(false)}
               products={selectedProduct}
               onUpdate={(updatedProduct) =>
                 handleEditProduct({
                   ...updatedProduct,
-                  index: products.findIndex(
-                    (p) => p._id === selectedProduct._id
-                  ),
+                  index: products.findIndex((p) => p._id === selectedProduct._id),
                 })
               }
               brands={brands}
@@ -236,5 +231,6 @@ export default function ProductPage() {
         </main>
       </div>
     </div>
-  );
+  )
 }
+

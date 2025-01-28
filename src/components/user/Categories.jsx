@@ -26,11 +26,9 @@ export default function Categories() {
   }, []);
 
   const handleCategoryClick = (category) => {
-    if (category.name === "All Products") {
-      navigate("/products");
-    } else {
-      navigate(`/products?category=${category.name}`);
-    }
+    console.log(category)
+    // Navigate to the dynamic route `/shop/:categoryTitle`
+    navigate(`/shop/${category.title === "All Products" ? "all" : category.title}`);
   };
 
   return (

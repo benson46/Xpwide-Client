@@ -1,10 +1,12 @@
 export default function Pagination({
-  currentPage,
-  totalPages,
+  currentPage = 1, // Default to 1 if not provided
+  totalPages = 1, // Default to 1 if not provided
   onPageChange,
-  itemsPerPage,
-  totalItems,
+  itemsPerPage = 10, // Default to 10 if not provided
+  totalItems = 0, // Default to 0 if not provided
 }) {
+  // Ensure valid values for pagination calculations
+  const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages); // Clamp between 1 and totalPages
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
@@ -13,11 +15,11 @@ export default function Pagination({
         <div className="text-sm text-gray-400">
           Showing{" "}
           <span className="font-medium text-white">
-            {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}
+            {Math.min((validCurrentPage - 1) * itemsPerPage + 1, totalItems)}
           </span>{" "}
           -{" "}
           <span className="font-medium text-white">
-            {Math.min(currentPage * itemsPerPage, totalItems)}
+            {Math.min(validCurrentPage * itemsPerPage, totalItems)}
           </span>{" "}
           of <span className="font-medium text-white">{totalItems}</span>{" "}
           results
@@ -27,9 +29,10 @@ export default function Pagination({
             className="isolate inline-flex -space-x-px rounded-md shadow-sm"
             aria-label="Pagination"
           >
+            {/* Previous Button */}
             <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
+              onClick={() => onPageChange(validCurrentPage - 1)}
+              disabled={validCurrentPage === 1}
               className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Previous</span>
@@ -46,13 +49,15 @@ export default function Pagination({
                 />
               </svg>
             </button>
+
+            {/* Page Numbers */}
             {pages.map((page) => (
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-800
                     ${
-                      currentPage === page
+                      validCurrentPage === page
                         ? "z-10 bg-yellow-500 text-black focus-visible:outline-offset-0"
                         : "text-gray-400 hover:bg-gray-900"
                     }`}
@@ -60,9 +65,11 @@ export default function Pagination({
                 {page}
               </button>
             ))}
+
+            {/* Next Button */}
             <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() => onPageChange(validCurrentPage + 1)}
+              disabled={validCurrentPage === totalPages}
               className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Next</span>

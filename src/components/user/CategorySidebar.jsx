@@ -1,38 +1,58 @@
-export default function CategorySidebar() {
-  const categories = [
-    { id: "all", label: "All Products" },
-    { id: "games", label: "Games" },
-    { id: "console", label: "Console" },
-    { id: "accessories", label: "Accessories" },
-  ];
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../utils/axios";
+
+export default function CategorySidebar({ currentCategory }) {
+  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+
+  // Fetch categories from the backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get("/category");
+        setCategories(response.data.categories);
+      } catch (error) {
+        console.error("Error fetching categories", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleCategoryChange = (category) => {
+    navigate(`/shop/${category === "all" ? "all" : category}`);
+  };
+  
 
   return (
     <aside className="w-64 p-6 border-r">
       <div className="mb-8">
         <h2 className="font-semibold mb-4">PRODUCT CATEGORIES</h2>
         <ul className="space-y-2">
+          <li>
+            <button
+              className={`block w-full text-left p-2 rounded-md ${
+                currentCategory === "all" ? "bg-gray-200" : ""
+              }`}
+              onClick={() => handleCategoryChange("all")}
+            >
+              All Products
+            </button>
+          </li>
           {categories.map((category) => (
-            <li key={category.id} className="flex items-center">
-              <input type="checkbox" className="mr-2" id={category.id} />
-              <label htmlFor={category.id} className="text-sm text-gray-600">
-                {category.label}
-              </label>
+            <li key={category._id}>
+              <button
+                className={`block w-full text-left p-2 rounded-md ${
+                  currentCategory === category.title ? "bg-gray-200" : ""
+                }`}
+                onClick={() => handleCategoryChange(category.title)}
+              >
+                {category.title}
+              </button>
             </li>
           ))}
         </ul>
-      </div>
-
-      <div className="mb-8">
-        <h2 className="font-semibold mb-4">FILTER BY PRICE</h2>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          defaultValue="0"
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        />
-
-        <div className="text-sm text-gray-600 mt-2">Price: $0 - $100</div>
       </div>
     </aside>
   );
