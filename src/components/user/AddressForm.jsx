@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "react"
 
 export default function AddressForm({ address, onSubmit, onCancel, className }) {
   const [formValues, setFormValues] = useState({
@@ -7,45 +7,51 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
     pincode: address?.pincode || "",
     locality: address?.locality || "",
     address: address?.address || "",
-    landmark: address?.landmark || "", // Added landmark field
+    landmark: address?.landmark || "",
     city: address?.city || "",
     state: address?.state || "",
     addressType: address?.addressType || "Home",
-  });
+  })
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({})
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormValues({
       ...formValues,
       [name]: value,
-    });
-  };
+    })
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      })
+    }
+  }
 
   const validateForm = () => {
-    const errors = {};
-    if (!formValues.name) errors.name = "Name is required";
+    const errors = {}
+    if (!formValues.name) errors.name = "Name is required"
     if (!formValues.phoneNumber || formValues.phoneNumber.length !== 10)
-      errors.phoneNumber = "Phone number must be 10 digits";
-    if (!formValues.pincode || formValues.pincode.length !== 6)
-      errors.pincode = "PIN code must be 6 digits";
-    if (!formValues.locality) errors.locality = "Locality is required";
-    if (!formValues.address) errors.address = "Address is required";
-    if (!formValues.city) errors.city = "City is required";
-    if (!formValues.state) errors.state = "State is required";
-    if (!formValues.addressType) errors.addressType = "Address type is required";
+      errors.phoneNumber = "Phone number must be 10 digits"
+    if (!formValues.pincode || formValues.pincode.length !== 6) errors.pincode = "PIN code must be 6 digits"
+    if (!formValues.locality) errors.locality = "Locality is required"
+    if (!formValues.address) errors.address = "Address is required"
+    if (!formValues.city) errors.city = "City is required"
+    if (!formValues.state) errors.state = "State is required"
+    if (!formValues.addressType) errors.addressType = "Address type is required"
 
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+    setErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (validateForm()) {
-      onSubmit(formValues);
+      onSubmit(formValues)
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-6 ${className}`}>
@@ -57,11 +63,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             value={formValues.name}
             onChange={handleInputChange}
             placeholder="Name"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.name ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {errors.name && (
-            <p className="text-sm text-red-600">{errors.name}</p>
-          )}
+          {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
         </div>
 
         <div>
@@ -73,11 +79,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             value={formValues.phoneNumber}
             onChange={handleInputChange}
             placeholder="10-digit mobile number"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.phoneNumber ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {errors.phoneNumber && (
-            <p className="text-sm text-red-600">{errors.phoneNumber}</p>
-          )}
+          {errors.phoneNumber && <p className="text-sm text-red-600">{errors.phoneNumber}</p>}
         </div>
       </div>
 
@@ -90,11 +96,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             value={formValues.pincode}
             onChange={handleInputChange}
             placeholder="Pincode"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.pincode ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {errors.pincode && (
-            <p className="text-sm text-red-600">{errors.pincode}</p>
-          )}
+          {errors.pincode && <p className="text-sm text-red-600">{errors.pincode}</p>}
         </div>
 
         <div>
@@ -104,11 +110,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             value={formValues.locality}
             onChange={handleInputChange}
             placeholder="Locality"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.locality ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {errors.locality && (
-            <p className="text-sm text-red-600">{errors.locality}</p>
-          )}
+          {errors.locality && <p className="text-sm text-red-600">{errors.locality}</p>}
         </div>
       </div>
 
@@ -119,15 +125,15 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
           value={formValues.address}
           onChange={handleInputChange}
           placeholder="Address (Area and Street)"
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            errors.address ? "border-red-500" : "border-gray-300"
+          }`}
         />
-        {errors.address && (
-          <p className="text-sm text-red-600">{errors.address}</p>
-        )}
+        {errors.address && <p className="text-sm text-red-600">{errors.address}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Landmark</label> {/* New field */}
+        <label className="block text-sm font-medium text-gray-700">Landmark</label>
         <input
           name="landmark"
           value={formValues.landmark}
@@ -145,11 +151,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             value={formValues.city}
             onChange={handleInputChange}
             placeholder="City/District/Town"
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.city ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          {errors.city && (
-            <p className="text-sm text-red-600">{errors.city}</p>
-          )}
+          {errors.city && <p className="text-sm text-red-600">{errors.city}</p>}
         </div>
 
         <div>
@@ -158,21 +164,24 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             name="state"
             value={formValues.state}
             onChange={handleInputChange}
-            className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.state ? "border-red-500" : "border-gray-300"
+            }`}
           >
             <option value="">--Select State--</option>
             <option value="Kerala">Kerala</option>
-            {/* Add more states as needed */}
+            <option value="Tamil Nadu">Tamil Nadu</option>
+            <option value="Karnataka">Karnataka</option>
+            <option value="Andhra Pradesh">Andhra Pradesh</option>
+            <option value="Maharashtra">Maharashtra</option>
           </select>
-          {errors.state && (
-            <p className="text-sm text-red-600">{errors.state}</p>
-          )}
+          {errors.state && <p className="text-sm text-red-600">{errors.state}</p>}
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Address Type</label>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 mt-2">
           <label className="flex items-center">
             <input
               name="addressType"
@@ -196,16 +205,11 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
             Work
           </label>
         </div>
-        {errors.addressType && (
-          <p className="text-sm text-red-600">{errors.addressType}</p>
-        )}
+        {errors.addressType && <p className="text-sm text-red-600">{errors.addressType}</p>}
       </div>
 
       <div className="flex gap-4">
-        <button
-          type="submit"
-          className="flex-1 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
-        >
+        <button type="submit" className="flex-1 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">
           Save
         </button>
         <button
@@ -217,5 +221,6 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
         </button>
       </div>
     </form>
-  );
+  )
 }
+

@@ -6,6 +6,8 @@ import { Button } from "../ui/Buttons";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/userSlice";
+import Logo from '../../assets/Images/Logo.png'
+
 
 function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,9 +34,9 @@ function Navbar() {
         <div className="flex items-center flex-1">
           <Link to="/" className="flex items-center">
             <img
-              src="/placeholder.svg?height=40&width=40"
+              src={Logo}
               alt="XPWIDE Logo"
-              className="h-10 w-10"
+              className="h-[60px] w-[80px]"
             />
           </Link>
         </div>

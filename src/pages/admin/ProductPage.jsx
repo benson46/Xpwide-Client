@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { PlusCircle, Pencil, Star } from "lucide-react"
-import Modal from "../../components/admin/Modal"
+import Modal from "../../components/Modal"
 import AddNewProduct from "../../components/admin/productModal/AddNewProduct"
 import EditProduct from "../../components/admin/productModal/EditProduct"
 import Sidebar from "../../components/admin/Sidebar"

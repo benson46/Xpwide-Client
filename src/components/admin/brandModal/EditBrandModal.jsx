@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Modal from "../Modal";
+import Modal from "../../Modal";
 
 export default function EditBrandModal({ isOpen, onClose, brand, onUpdate }) {
   const [formData, setFormData] = useState({

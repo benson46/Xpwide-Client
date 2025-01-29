@@ -13,8 +13,8 @@ import OrderDetails from "../pages/user/OrderDetials";
 import Navbar from "../components/user/Navbar";
 import Cart from "../pages/user/Cart";
 import Profile from "../pages/user/Profile";
-import ChangePassword from "../pages/user/ChangePassword";
 import ManageAddress from "../pages/user/MangaeAddress";
+import CheckoutPage from "../pages/user/Checkout";
 
 function UserRoutes() {
   const location = useLocation();
@@ -24,8 +24,8 @@ function UserRoutes() {
     "/signup",
     "/login",
     "/otp-verification",
-    "/reset-password-email",
-    "/reset-password",
+    "/change-password-email",
+    "/change-password",
     "/change-password",
   ].includes(location.pathname);
 
@@ -37,8 +37,8 @@ function UserRoutes() {
         <Route path="signup" element={<UserRequireAuth><Signup /></UserRequireAuth>} />
         <Route path="login" element={<UserRequireAuth><Login /></UserRequireAuth>} />
         <Route path="otp-verification" element={<UserRequireAuth><OTPVerification /></UserRequireAuth>} />
-        <Route path="reset-password-email" element={<UserRequireAuth><ResetPasswordEmail /></UserRequireAuth>} />
-        <Route path="reset-password" element={<UserRequireAuth><ResetPassword /></UserRequireAuth>} />
+        <Route path="change-password-email" element={<UserRequireAuth><ResetPasswordEmail /></UserRequireAuth>} />
+        <Route path="change-password" element={<UserRequireAuth><ResetPassword /></UserRequireAuth>} />
 
         {/* Protected Routes (Requires Authentication) */}
         <Route index element={<Homepage />} />
@@ -47,8 +47,8 @@ function UserRoutes() {
         
         {/* Wrapping protected routes with UserAuth */}
         <Route path="cart" element={<UserAuth><Cart /></UserAuth>} />
+        <Route path="checkout" element={<UserAuth><CheckoutPage/></UserAuth>}/>
         <Route path="profile" element={<UserAuth><Profile /></UserAuth>} />
-        <Route path="change-password" element={<UserAuth><ChangePassword /></UserAuth>} />
         <Route path="address" element={<UserAuth><ManageAddress /></UserAuth>} />
         <Route path="orders" element={<UserAuth><Orders /></UserAuth>} />
         <Route path="order-detials" element={<UserAuth><OrderDetails /></UserAuth>} />

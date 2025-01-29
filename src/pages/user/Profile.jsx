@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../utils/axios";
+import validate from "../../utils/validate";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -15,15 +16,15 @@ export default function Profile() {
     newPassword: "",
     confirmPassword: "",
   });
-  const user = useSelector((state) => state.user?.user);
-  const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phoneNumber: "",
   });
+  const user = useSelector((state) => state.user?.user);
+  const googleUser = useSelector((state) => state?.user?.user?.googleUser);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) {
@@ -70,6 +71,14 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate the form data
+    const errors = validate(formData);
+    if (Object.keys(errors).length > 0) {
+      Object.values(errors).forEach((error) => toast.error(error));
+      return;
+    }
+
     try {
       const token = localStorage.getItem("accessToken");
       const response = await axiosInstance.put(
@@ -96,18 +105,33 @@ export default function Profile() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+
+    // Validate password fields
+    const { oldPassword, newPassword, confirmPassword } = passwordData;
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      toast.error("All password fields are required.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
       toast.error("New password and confirm password do not match!");
+      return;
+    }
+
+    const errors = validate({ password: newPassword });
+    if (Object.keys(errors).length > 0) {
+      Object.values(errors).forEach((error) => toast.error(error));
       return;
     }
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await axiosInstance.put(
-        "/profile/change-password",
+      const response = await axiosInstance.post(
+        "/change-password",
         {
-          oldPassword: passwordData.oldPassword,
-          newPassword: passwordData.newPassword,
+          oldPassword,
+          newPassword,
+          email: formData.email,
         },
         {
           headers: {
@@ -115,7 +139,7 @@ export default function Profile() {
           },
         }
       );
-
+      
       if (response.data.success) {
         toast.success("Password updated successfully!");
         setIsPasswordModalOpen(false);
@@ -184,14 +208,18 @@ export default function Profile() {
                 </button>
               )}
             </form>
-            <button
-              onClick={() => setIsPasswordModalOpen(true)}
-              className="mt-6 w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-              Change Password
-            </button>
+            {!googleUser && (
+              <button
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="mt-6 w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Change Password
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Password Modal */}
         {isPasswordModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-md shadow-lg w-1/3">
@@ -214,7 +242,7 @@ export default function Profile() {
                     New Password
                   </label>
                   <input
-                    type="password"
+                    type="text"
                     name="newPassword"
                     value={passwordData.newPassword}
                     onChange={handlePasswordInputChange}
@@ -226,7 +254,7 @@ export default function Profile() {
                     Confirm Password
                   </label>
                   <input
-                    type="password"
+                    type="text"
                     name="confirmPassword"
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordInputChange}
@@ -242,19 +270,13 @@ export default function Profile() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate("/resetpassword")}
-                    className="text-blue-500 hover:underline"
+                    onClick={() => setIsPasswordModalOpen(false)}
+                    className="py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                   >
-                    Forgot Old Password?
+                    Close
                   </button>
                 </div>
               </form>
-              <button
-                onClick={() => setIsPasswordModalOpen(false)}
-                className="mt-4 py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </div>
         )}

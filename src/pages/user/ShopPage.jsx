@@ -6,6 +6,7 @@ import CategorySidebar from "../../components/user/CategorySidebar";
 import Pagination from "../../components/Pagination";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../../utils/axios";
+import ProductCard from "../../components/user/ProductCard";
 
 export default function ShopPage() {
   const [sortBy, setSortBy] = useState("featured");
@@ -13,38 +14,38 @@ export default function ShopPage() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const navigate = useNavigate();
-  const { categoryTitle } = useParams(); // Fetch category from route params
+  const { categoryTitle } = useParams();
 
   // Fetch products based on the current category
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Call the endpoint with the category as a query parameter
-        const endpoint = `/products?category=${categoryTitle === "all" ? "all" : categoryTitle}`;
+        const endpoint = `/products?category=${
+          categoryTitle === "all" ? "all" : categoryTitle
+        }`;
         const response = await axiosInstance.get(endpoint);
         setProducts(response.data.products);
-        setFilteredProducts(response.data.products); // Initially show all fetched products
+        setFilteredProducts(response.data.products);
       } catch (error) {
-        toast.error("Failed to fetch products");
+        toast.error(
+          error.response?.data?.message || "Failed to fetch products"
+        );
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchProducts();
   }, [categoryTitle]);
-  
 
-  // Sort products whenever `sortBy` changes
+  // Sort products when sortBy changes
   useEffect(() => {
     const sortProducts = () => {
       const sorted = [...products].sort((a, b) => {
         switch (sortBy) {
           case "featured":
-            // Show featured products first
-            if (a.isFeatured === b.isFeatured) return 0; // If both have the same featured status, no change
-            return a.isFeatured ? -1 : 1; // Featured products come first
+            return a.isFeatured ? -1 : 1;
           case "price-low":
             return a.price - b.price;
           case "price-high":
@@ -54,23 +55,18 @@ export default function ShopPage() {
           case "newest":
             return new Date(b.createdAt) - new Date(a.createdAt);
           case "a-z":
-            const titleA = a.name || '';
-            const titleB = b.name || '';
-            return titleA.localeCompare(titleB);
+            return (a.name || "").localeCompare(b.name || "");
           case "z-a":
-            const titleC = a.name || '';
-            const titleD = b.name || '';
-            return titleD.localeCompare(titleC);
+            return (b.name || "").localeCompare(a.name || "");
           default:
             return 0;
         }
       });
       setFilteredProducts(sorted);
     };
-  
+
     sortProducts();
   }, [sortBy, products]);
-  
 
   // Navigate to product details page
   const handleClick = (id) => {
@@ -78,17 +74,21 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <CategorySidebar currentCategory={categoryTitle || "all"} />{" "}
-      {/* Pass currentCategory to Sidebar */}
+    <div className="flex min-h-screen bg-white relative">
+      {/* Sidebar for categories */}
+      <CategorySidebar currentCategory={categoryTitle || "all"} />
+
+      {/* Main content area */}
       <main className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
+          {/* Page title */}
           <h1 className="text-2xl font-bold">
             {categoryTitle === "all" || !categoryTitle
               ? "All Products"
               : categoryTitle.charAt(0).toUpperCase() + categoryTitle.slice(1)}
           </h1>
 
+          {/* Sort dropdown */}
           <div className="relative">
             <select
               value={sortBy}
@@ -108,33 +108,30 @@ export default function ShopPage() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            <p>Loading products...</p>
-          ) : filteredProducts.length === 0 ? (
+          {filteredProducts.length === 0 && !loading ? (
             <p>No products available in this category.</p>
           ) : (
             filteredProducts.map((product) => (
-              <div
+              <ProductCard
                 key={product._id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                _id={product._id}
+                name={product.name}
+                price={product.price}
+                discount={product.discount}
+                images={product.images || []}
                 onClick={() => handleClick(product._id)}
-              >
-                <img
-                  src={product.images[0] || "/placeholder.svg"}
-                  alt={product.title}
-                  className="w-full h-[330px] object-cover rounded-t-lg"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="font-bold text-gray-600">₹{product.price}</p>
-                </div>
-              </div>
+              />
             ))
           )}
         </div>
       </main>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-80 z-50">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
     </div>
   );
 }

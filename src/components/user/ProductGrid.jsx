@@ -12,11 +12,7 @@ const ProductGrid = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axiosInstance.get("/products", {
-          params: {
-            isUser: true,
-          }
-        });
+        const response = await axiosInstance.get("/featured-products");
         setProducts(response.data.products);
       } catch (error) {
         toast.error("Failed to fetch products:", error);

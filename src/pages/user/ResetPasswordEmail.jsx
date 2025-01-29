@@ -12,7 +12,7 @@ export default function ResetPasswordEmail() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post("/forget-password-otp", { email });
+      const response = await axiosInstance.post("/reset-password-otp", { email });
       console.log(response);
       navigate('/otp-verification', { state: { email, from: 'reset-password' } });
     } catch (error) {
