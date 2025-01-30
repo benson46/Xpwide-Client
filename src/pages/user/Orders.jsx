@@ -1,84 +1,86 @@
-"use client"
-
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../utils/axios";
 
 export default function Orders() {
-  const orders = [
-    {
-      id: 1,
-      product: {
-        name: "Red Redemption 2",
-        image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WFTYUserr0NAldDx9lxBPZvtzSomvK.png",
-        category: "Game",
-        manufacturer: "Rockstar",
-      },
-      quantity: 1,
-      price: 2034,
-      status: "DISPATCHED",
-    },
-    {
-      id: 2,
-      product: {
-        name: "GTA V",
-        image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WFTYUserr0NAldDx9lxBPZvtzSomvK.png",
-        category: "Game",
-        manufacturer: "Rockstar",
-      },
-      quantity: 2,
-      price: 1970,
-      status: "DELIVERED",
-      deliveryDate: "16-12-2024",
-    },
-    {
-      id: 3,
-      product: {
-        name: "SONY PlayStation 5 console",
-        image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WFTYUserr0NAldDx9lxBPZvtzSomvK.png",
-        category: "Console",
-        manufacturer: "Sony",
-      },
-      quantity: 1,
-      price: 59390,
-      status: "REFUND COMPLETED",
-    },
-  ]
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    axiosInstance
+      .get("/orders", { withCredentials: true })
+      .then((response) => {
+        setOrders(Array.isArray(response.data) ? response.data : []);
+      })
+      .catch((error) => console.error("Error fetching orders:", error));
+  }, []);
+
+  const cancelOrder = (orderId, productId) => {
+    axiosInstance
+      .patch(`/orders/${orderId}/cancel/${productId}`, {}, { withCredentials: true })
+      .then((response) => {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === orderId
+              ? {
+                  ...order,
+                  products: order.products.map((product) =>
+                    product._id === productId ? { ...product, status: "Cancelled" } : product
+                  ),
+                  status: response.data.order.status,
+                }
+              : order
+          )
+        );
+      })
+      .catch((error) => console.error("Error cancelling order:", error));
+  };
+
+  const returnOrder = (orderId, productId) => {
+    axiosInstance
+      .patch(`/orders/${orderId}/return`, { productId }, { withCredentials: true })
+      .then(() => {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === orderId
+              ? {
+                  ...order,
+                  products: order.products.map((product) =>
+                    product._id === productId ? { ...product, status: "RETURN INITIATED" } : product
+                  ),
+                }
+              : order
+          )
+        );
+      })
+      .catch((error) => console.error("Error returning order:", error));
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "DISPATCHED":
-        return "text-amber-500"
-      case "DELIVERED":
-        return "text-green-500"
-      case "REFUND COMPLETED":
-        return "text-red-500"
-      default:
-        return "text-gray-500"
+      case "Pending": return "text-blue-500";
+      case "Shipped": return "text-amber-500";
+      case "Delivered": return "text-green-500";
+      case "Cancelled": return "text-red-500";
+      case "REFUND COMPLETED": return "text-red-500";
+      default: return "text-gray-500";
     }
-  }
+  };
 
-  const getActionbuttons = (status) => {
-    switch (status) {
-      case "DISPATCHED":
-        return (
-          <div className="space-y-2">
-            <button className="w-full bg-amber-500 hover:bg-amber-600">RETURN</button>
-            <button className="w-full bg-red-500 hover:bg-red-600">CANCEL ORDER</button>
-          </div>
-        )
-      case "DELIVERED":
-      case "REFUND COMPLETED":
-        return <button className="w-full bg-blue-800 hover:bg-blue-900">VIEW</button>
-      default:
-        return null
-    }
-  }
+  const canReturnOrder = (product) => {
+    if (product.status !== "Delivered" || !product.deliveryDate) return false;
+    const today = new Date();
+    const deliveryDate = new Date(product.deliveryDate);
+    return (today - deliveryDate) / (1000 * 60 * 60 * 24) <= 7;
+  };
+
+  const openModal = (order) => setSelectedOrder(order);
+  const closeModal = () => setSelectedOrder(null);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-center mb-8">ORDERS</h1>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">MY ORDERS</h2>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -91,38 +93,59 @@ export default function Orders() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.id} className="border-b">
-                <td className="py-4 px-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-24 h-24 relative flex-shrink-0">
-                      <img
-                        src={order.product.image || "/placeholder.svg"}
-                        alt={order.product.name}
-                        className="object-cover rounded w-full h-full"
-                      />
+            {orders.map((order) =>
+              order.products.map((product, productIndex) => (
+                <tr key={`${order._id}-${product.productId || productIndex}`} className="border-b">
+                  <td className="py-4 px-4">
+                    <div className="flex items-start space-x-4">
+                      <img src={product.images?.[0] || "/placeholder.svg"} alt={product.name} className="w-24 h-24 rounded" />
+                      <div>
+                        <h3 className="font-medium">{product.name}</h3>
+                        <p className="text-sm text-gray-600">{product.category}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium">{order.product.name}</h3>
-                      <p className="text-sm text-gray-600">{order.product.category}</p>
-                      <p className="text-sm text-gray-600">{order.product.manufacturer}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="text-center py-4 px-4">{order.quantity}</td>
-                <td className="text-center py-4 px-4">₹{order.price}</td>
-                <td className="text-center py-4 px-4">
-                  <div className="flex flex-col items-center">
-                    <span className={getStatusColor(order.status)}>{order.status}</span>
-                    {order.deliveryDate && <span className="text-sm text-green-500 mt-1">{order.deliveryDate}</span>}
-                  </div>
-                </td>
-                <td className="text-center py-4 px-4 min-w-[150px]">{getActionbuttons(order.status)}</td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="text-center py-4 px-4">{product.quantity}</td>
+                  <td className="text-center py-4 px-4">₹{product.price * product.quantity}</td>
+                  <td className="text-center py-4 px-4">
+                    <span className={getStatusColor(product.status)}>{product.status}</span>
+                  </td>
+                  <td className="text-center py-4 px-4 flex flex-col space-y-2">
+                    <button onClick={() => openModal(order)} className="bg-blue-500 text-white px-3 py-1 rounded">VIEW</button>
+                    {product.status !== "Cancelled" && product.status !== "Delivered" && (
+                      <button onClick={() => cancelOrder(order._id, product._id)} className="bg-red-500 text-white px-3 py-1 rounded">CANCEL</button>
+                    )}
+                    {product.status === "Delivered" && canReturnOrder(product) && (
+                      <button onClick={() => returnOrder(order._id, product.productId)} className="bg-yellow-500 text-white px-3 py-1 rounded">RETURN</button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {selectedOrder && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h2 className="text-xl font-bold mb-4">Order Details</h2>
+            <p><strong>Order ID:</strong> {selectedOrder._id}</p>
+            <p><strong>Customer Name:</strong> {selectedOrder.customerName}</p>
+            <p><strong>Product:</strong></p>
+            <ul className="list-disc ml-5 mb-2">
+              {selectedOrder.products.map((product, index) => (
+                <li key={index}>{product.name} - {product.quantity}</li>
+              ))}
+            </ul>
+            {console.log(selectedOrder)}
+            <p><strong>Address:</strong> {selectedOrder.address}</p>
+            <p><strong>Total:</strong> ₹{selectedOrder.totalAmount}</p>
+            <p><strong>Booked Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+            <button onClick={closeModal} className="bg-red-500 text-white px-4 py-2 rounded mt-4">Close</button>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }

@@ -6,8 +6,9 @@ import Categories from "../pages/admin/Categories";
 import ProductPage from "../pages/admin/ProductPage";
 import Brands from "../pages/admin/Brands";
 import { AdminAuth, AdminRequireAuth } from "../components/private/AdminProtectedRoute";
+import OrdersTable from "../pages/admin/OrderTable";
 
-function AdminRoutes() {
+export default function AdminRoutes() {
   return (
     <>
     <Routes>
@@ -59,10 +60,17 @@ function AdminRoutes() {
           </AdminAuth>
         }
       />
+      <Route
+        path="order-table"
+        element={
+          // <AdminAuth>
+            <OrdersTable />
+          // </AdminAuth>
+        }
+      />
       <Route path="*" element={<>404 PAGE NOT FOUND</>} />
       </Routes>
     </>
   );
 }
 
-export default AdminRoutes;

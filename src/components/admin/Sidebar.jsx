@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 export const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/dashboard" },
-  { name: "Orders", icon: ShoppingCart, path: "/orders" },
+  { name: "Orders", icon: ShoppingCart, path: "/order-table" },
   { name: "Products", icon: Package, path: "/products" },
   { name: "Users", icon: Users, path: "/users" },
   { name: "Categories", icon: Grid, path: "/categories" },
@@ -27,9 +27,9 @@ export const menuItems = [
 
 export default function Sidebar({ activePage }) {
   const navigate = useNavigate();
-  const handleClick = (name) => {
+  const handleClick = (path) => {
     const link = name.toLowerCase();
-    navigate(`/admin/${link}`);
+    navigate(`/admin${path}`);
   };
   return (
     <aside className="w-64 min-h-[calc(100vh-73px)] bg-black border-r border-gray-800">
@@ -40,7 +40,7 @@ export default function Sidebar({ activePage }) {
             return (
               <li key={item.name}>
                 <button
-                  onClick={() => handleClick(item.name)}
+                  onClick={() => handleClick(item.path)}
                   className={`w-full flex items-center gap-3 px-4 py-2 rounded-md transition-colors
                     ${
                       activePage === item.name

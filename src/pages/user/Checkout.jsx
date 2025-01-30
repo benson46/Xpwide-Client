@@ -207,7 +207,8 @@ export default function CheckoutPage() {
                       </span>
                     ) : (
                       <span className="text-green-500">
-                        In Stock: {product.productId.stock}
+                        {console.log(JSON.stringify(product.quantity))}
+                        Quantity: {product.quantity}
                       </span>
                     )}
                   </div>
