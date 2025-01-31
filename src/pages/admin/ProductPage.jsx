@@ -79,23 +79,25 @@ export default function ProductPage() {
 
   const handleEditProduct = async (formData) => {
     try {
-      const isProductExist = products.some((product, index) => {
-        return product.name.toLowerCase() === formData.name.toLowerCase() && index !== formData.index
-      })
-
-      if (isProductExist) {
-        toast.error("Product must be unique")
-        return
+      // Create a Set of product names for fast lookup
+      const productNamesSet = new Set(products.map(product => product.name.toLowerCase()));
+  
+      // Check if the product name already exists (excluding the current product)
+      if (productNamesSet.has(formData.name.toLowerCase()) && products.some((product, index) => product.name.toLowerCase() === formData.name.toLowerCase() && index !== formData.index)) {
+        toast.error("Product must be unique");
+        return;
       }
-
-      await adminAxiosInstance.put(`/products/${formData.id}`, formData)
-      toast.success("Product updated successfully!")
-      fetchProduct()
+  
+      console.log(formData.id);
+      await adminAxiosInstance.put(`/products/${formData.id}`, formData);
+      fetchProduct();
+      toast.success("Product updated successfully!");
     } catch (error) {
-      console.error(error)
-      toast.error(error.response?.data?.message || "Error updating product.")
+      console.error(error);
+      toast.error(error.response?.data?.message || "Error updating product.");
     }
-  }
+  };
+  
 
   const handleAction = async (productId) => {
     await adminAxiosInstance.patch("/products", { productId })

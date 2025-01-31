@@ -116,12 +116,9 @@ adminAxiosInstance.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        console.log("enna  vanna");
         const resultAction = await adminAxiosInstance.post(
           "/refresh-access-token"
         );
-
-        console.log("result", resultAction);
 
         const admin = JSON.parse(localStorage.getItem("adminInfo"));
         console.log(admin);
