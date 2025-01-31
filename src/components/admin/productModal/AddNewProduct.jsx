@@ -2,8 +2,14 @@ import { useState, useRef } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { Upload, X } from "lucide-react";
+import toast from "react-hot-toast";
 
-export default function AddNewProduct({ onClose, categories, brands, onSubmit }) {
+export default function AddNewProduct({
+  onClose,
+  categories,
+  brands,
+  onSubmit,
+}) {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -68,7 +74,10 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
           setImages([...images, data.secure_url]);
           setSelectedImage(null);
         } else {
-          console.error("Failed to upload image to Cloudinary", data.error.message);
+          console.error(
+            "Failed to upload image to Cloudinary",
+            data.error.message
+          );
         }
       } catch (error) {
         console.error("An error occurred while uploading to Cloudinary", error);
@@ -86,7 +95,7 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
     if (!validateForm()) return;
 
     if (images.length !== 3) {
-      setFormErrors({ images: "Please upload exactly 3 images." });
+      toast.error("Please upload exactly 3 images.");
       return;
     }
 
@@ -105,30 +114,40 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-400">Product Name</label>
+      <div className="space-y-2 text-white">
+        <label className="block text-sm font-medium text-gray-400">
+          Product Name
+        </label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
-        formErrors.name ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
-      }`}
+          className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+            formErrors.name
+              ? "border-red-500 text-black"
+              : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+          }`}
           placeholder="Enter product name"
         />
-        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+        {formErrors.name && (
+          <p className="text-red-500 text-sm">{formErrors.name}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">Category</label>
+          <label className="block text-sm font-medium text-gray-400">
+            Category
+          </label>
           <select
             value={formData.category}
             onChange={(e) =>
               setFormData({ ...formData, category: e.target.value })
             }
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-400 placeholder-gray-600 focus:outline-none ${
-              formErrors.category ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+              formErrors.category
+                ? "border-red-500 text-black"
+                : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
           >
             <option value="">Select category</option>
@@ -140,18 +159,24 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 </option>
               ))}
           </select>
-          {formErrors.category && <p className="text-red-500 text-sm">{formErrors.category}</p>}
+          {formErrors.category && (
+            <p className="text-red-500 text-sm">{formErrors.category}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">Brand</label>
+          <label className="block text-sm font-medium text-gray-400">
+            Brand
+          </label>
           <select
             value={formData.brand}
             onChange={(e) =>
               setFormData({ ...formData, brand: e.target.value })
             }
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-400 placeholder-gray-600 focus:outline-none ${
-              formErrors.brand ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+              formErrors.brand
+                ? "border-red-500 text-black"
+                : " text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
           >
             <option value="">Select brand</option>
@@ -163,61 +188,83 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 </option>
               ))}
           </select>
-          {formErrors.brand && <p className="text-red-500 text-sm">{formErrors.brand}</p>}
+          {formErrors.brand && (
+            <p className="text-red-500 text-sm">{formErrors.brand}</p>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-600">Description</label>
+        <label className="block text-sm font-medium text-gray-600">
+          Description
+        </label>
         <textarea
           value={formData.description}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
-          className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
-            formErrors.description ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+          className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+            formErrors.description
+              ? "border-red-500 text-black"
+              : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
           }`}
           placeholder="Enter product description"
         />
-        {formErrors.description && <p className="text-red-500 text-sm">{formErrors.description}</p>}
+        {formErrors.description && (
+          <p className="text-red-500 text-sm">{formErrors.description}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">Price</label>
+          <label className="block text-sm font-medium text-gray-400">
+            Price
+          </label>
           <input
             type="number"
             value={formData.price}
             onChange={(e) =>
               setFormData({ ...formData, price: e.target.value })
             }
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
-              formErrors.price ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+              formErrors.price
+                ? "border-red-500 text-black"
+                : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
             placeholder="Enter price"
           />
-          {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+          {formErrors.price && (
+            <p className="text-red-500 text-sm">{formErrors.price}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-400">Stock</label>
+          <label className="block text-sm font-medium text-gray-400">
+            Stock
+          </label>
           <input
             type="number"
             value={formData.stock}
             onChange={(e) =>
               setFormData({ ...formData, stock: e.target.value })
             }
-            className={`w-full rounded-lg border px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none ${
-              formErrors.stock ? "border-red-500" : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+              formErrors.stock
+                ? "border-red-500 text-black"
+                : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
             placeholder="Enter stock"
           />
-          {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
+          {formErrors.stock && (
+            <p className="text-red-500 text-sm">{formErrors.stock}</p>
+          )}
         </div>
       </div>
 
       <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-400">Product Images</label>
+        <label className="block text-sm font-medium text-gray-400">
+          Product Images
+        </label>
         <div className="flex space-x-4">
           {images.map((image, index) => (
             <div key={index} className="relative">

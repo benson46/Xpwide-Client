@@ -15,7 +15,6 @@ export const login = createAsyncThunk(
       const response = await axiosInstance.post("/login", formData);
       return response.data;
     } catch (error) {
-      toast.error(error.response?.data?.message)
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
   }

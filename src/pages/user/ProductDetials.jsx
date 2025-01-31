@@ -1,21 +1,22 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { axiosInstance } from "../../utils/axios";
-import { HeartIcon, IndianRupee } from "lucide-react";
-import Navbar from "../../components/user/Navbar";
-import toast from "react-hot-toast";
+import { useEffect, useState, useRef } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { axiosInstance } from "../../utils/axios"
+import { HeartIcon, IndianRupee } from "lucide-react"
+import toast from "react-hot-toast"
+import { ImageModal } from "../../components/user/ImageModal"
 
 export default function ProductDetails() {
-  const [quantity, setQuantity] = useState(1);
-  const [count, setCount] = useState(0);
-  const [product, setProduct] = useState({});
-  const [isZoomed, setIsZoomed] = useState(false);
-  const navigate = useNavigate();
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
-  const imageRef = useRef(null);
-  const { productId } = useParams();
-  const ZoomLevel = 2.5;
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [quantity, setQuantity] = useState(1)
+  const [count, setCount] = useState(0)
+  const [product, setProduct] = useState({})
+  const [isZoomed, setIsZoomed] = useState(false)
+  const navigate = useNavigate()
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
+  const imageRef = useRef(null)
+  const { productId } = useParams()
+  const ZoomLevel = 4
+  const [relatedProducts, setRelatedProducts] = useState([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const reviews = [
     {
@@ -33,66 +34,64 @@ export default function ProductDetails() {
       rating: 5,
       comment: "Good game",
     },
-  ];
+  ]
 
   useEffect(() => {
     const fetchProductDetail = async () => {
       const response = await axiosInstance.get("/product", {
         params: { productId },
-      });
+      })
       if (response.data.product.isBlocked) {
-        toast.error("Product Blocked");
-        navigate("/");
+        toast.error("Product Blocked")
+        navigate("/")
       } else {
-        setProduct(response.data.product);
+        setProduct(response.data.product)
         const relatedProducts = await axiosInstance.get("/related-products", {
           params: {
             categoryId: response.data.product.category?._id,
             brandId: response.data.product.brand?._id,
             productId,
           },
-        });
-        setRelatedProducts(relatedProducts.data.products);
+        })
+        setRelatedProducts(relatedProducts.data.products)
       }
-    };
-    fetchProductDetail();
-  }, [productId]);
+    }
+    fetchProductDetail()
+  }, [productId])
 
   const handleImage = (operation) => {
-    if ((count <= 0 && operation === "-") || (count >= 2 && operation === "+"))
-      return;
-    if (operation === "+") setCount((prev) => ++prev);
-    if (operation === "-") setCount((prev) => --prev);
-  };
+    if ((count <= 0 && operation === "-") || (count >= 2 && operation === "+")) return
+    if (operation === "+") setCount((prev) => ++prev)
+    if (operation === "-") setCount((prev) => --prev)
+  }
 
   const handleMouseMove = (e) => {
-    if (!imageRef.current) return;
-    const { left, top, width, height } =
-      imageRef.current.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    setZoomPosition({ x, y });
-  };
+    if (!imageRef.current) return
+    const { left, top, width, height } = imageRef.current.getBoundingClientRect()
+    const x = ((e.clientX - left) / width) * 100
+    const y = ((e.clientY - top) / height) * 100
+    setZoomPosition({ x, y })
+  }
 
   const handleAddToCart = async (productId) => {
     if (quantity > product.stock || quantity > 5) {
-      toast.error("Selected quantity exceeds stock available");
-      return;
+      toast.error("Selected quantity exceeds stock available")
+      return
     }
 
     try {
       const response = await axiosInstance.post("/cart", {
         productId,
         quantity,
-      });
+      })
       if (response.status === 200) {
-        toast.success("Product added to cart successfully");
+        toast.success("Product added to cart successfully")
       }
     } catch (error) {
-      console.error("Error adding product to cart:", error);
-      toast.error("Failed to add product to cart");
+      console.error("Error adding product to cart:", error)
+      toast.error("Failed to add product to cart")
     }
-  };
+  }
 
   return (
     <>
@@ -102,10 +101,11 @@ export default function ProductDetails() {
           <div className="relative">
             <div
               ref={imageRef}
-              className="relative aspect-square w-3/4 h-auto overflow-hidden rounded-lg"
-              onMouseEnter={() => setIsZoomed(true)}
-              onMouseLeave={() => setIsZoomed(false)}
+              className="relative aspect-square w-3/4 h-auto overflow-hidden rounded-lg cursor-zoom-in"
+              onMouseEnter={() => window.innerWidth >= 1024 && setIsZoomed(true)}
+              onMouseLeave={() => window.innerWidth >= 1024 && setIsZoomed(false)}
               onMouseMove={handleMouseMove}
+              onClick={() => window.innerWidth < 1024 && setIsModalOpen(true)}
             >
               {product?.images && (
                 <img
@@ -133,9 +133,7 @@ export default function ProductDetails() {
               {product.images?.map((_, index) => (
                 <span
                   key={index}
-                  className={`h-2 w-2 rounded-full ${
-                    count === index ? "bg-blue-500" : "bg-gray-300"
-                  }`}
+                  className={`h-2 w-2 rounded-full ${count === index ? "bg-blue-500" : "bg-gray-300"}`}
                 ></span>
               ))}
             </div>
@@ -184,10 +182,7 @@ export default function ProductDetails() {
               {product.stock > 0 ? (
                 <>
                   <div className="gap-2 flex items-center">
-                    <label
-                      htmlFor="quantity"
-                      className="text-black text-lg font-medium"
-                    >
+                    <label htmlFor="quantity" className="text-black text-lg font-medium">
                       Quantity:
                     </label>
                     <input
@@ -196,15 +191,15 @@ export default function ProductDetails() {
                       max={Math.min(product.stock, 5)} // Limit the max to the smaller value between stock and 5
                       value={quantity}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value);
+                        const value = Number.parseInt(e.target.value)
                         if (value > product.stock) {
-                          toast.error("Quantity exceeds available stock");
-                          setQuantity(product.stock); // Reset to max stock
+                          toast.error("Quantity exceeds available stock")
+                          setQuantity(product.stock) // Reset to max stock
                         } else if (value > 5) {
-                          toast.error("You cannot purchase more than 5 units");
-                          setQuantity(5); // Reset to max 5
+                          toast.error("You cannot purchase more than 5 units")
+                          setQuantity(5) // Reset to max 5
                         } else if (value >= 1) {
-                          setQuantity(value); // Valid value
+                          setQuantity(value) // Valid value
                         }
                       }}
                       className="w-24 border text-center p-2 rounded"
@@ -213,9 +208,7 @@ export default function ProductDetails() {
 
                   <button
                     className={`flex-1 bg-orange-500 text-white px-5 py-2 rounded ${
-                      product.stock > 0
-                        ? "hover:bg-orange-600"
-                        : "opacity-50 cursor-not-allowed"
+                      product.stock > 0 ? "hover:bg-orange-600" : "opacity-50 cursor-not-allowed"
                     }`}
                     onClick={() => handleAddToCart(product._id)}
                     disabled={product.stock <= 0}
@@ -266,22 +259,17 @@ export default function ProductDetails() {
           {relatedProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <div
-                  key={relatedProduct._id}
-                  className="border rounded overflow-hidden"
-                >
+                <div key={relatedProduct._id} className="border rounded overflow-hidden">
                   <div className="aspect-[4/3] relative">
                     <img
-                      src={relatedProduct.images[0]}
+                      src={relatedProduct.images[0] || "/placeholder.svg"}
                       alt={relatedProduct.name}
                       className="object-cover w-full h-full"
                     />
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold">{relatedProduct.name}</h3>
-                    <p className="texsdt-lg font-bold mt-2">
-                      {relatedProduct.price}
-                    </p>
+                    <p className="texsdt-lg font-bold mt-2">{relatedProduct.price}</p>
                     <button
                       className="w-full bg-blue-500 text-white p-2 mt-4 rounded"
                       onClick={() => navigate(`/product/${relatedProduct._id}`)}
@@ -296,7 +284,15 @@ export default function ProductDetails() {
             <p className="text-gray-500">No related products found.</p>
           )}
         </div>
+        {isModalOpen && product?.images && (
+          <ImageModal
+            src={product.images[count] || "/placeholder.svg"}
+            alt={product.name}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
       </div>
     </>
-  );
+  )
 }
+

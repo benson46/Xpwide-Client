@@ -12,14 +12,18 @@ export default function Brands() {
   const [isEditBrandModalOpen, setIsEditBrandModalOpen] = useState(false);
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchBrand = async () => {
     try {
       const response = await adminAxiosInstance.get("/brands");
       setBrands(response.data.brands || []);
+      setLoading(false)
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch brands.");
+      setLoading(false)
+
     }
   };
 
@@ -116,70 +120,74 @@ export default function Brands() {
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-lg  bg-gray-900">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left border-b border-gray-800">
-                    <th className="text-left py-3 px-4">Brand</th>
-                    <th className="py-3 px-4 text-center">DESCRIPTION</th>
-                    <th className="py-3 px-4">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {brands.length > 0 ? (
-                    brands.map((brand, index) => (
-                      <tr key={index} className="border-b border-gray-800">
-                        <td className="py-3 px-4">{brand.title}</td>
-                        <td className="py-3 px-4 text-center">
-                          {(brand.description || "No description available")
-                            .split(" ")
-                            .map((word, index) => (
-                              <span key={index}>
-                                {word}
-                                {index === 2 ? <br /> : " "}
-                              </span>
-                            ))}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              className={`px-4 py-1 rounded-md text-sm font-medium ${
-                                brand.isBlocked
-                                  ? "bg-green-500 hover:bg-green-600"
-                                  : "bg-red-500 hover:bg-red-600"
-                              }`}
-                              onClick={() => toggleStatus(brand._id)}
-                            >
-                              {brand.isBlocked ? "List" : "Unlist"}
-                            </button>
-                            <button
-                              className="p-1 hover:bg-gray-800 rounded"
-                              onClick={() => {
-                                setSelectedBrand(brand);
-                                setIsEditBrandModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          </div>
+            <div className="overflow-x-auto rounded-lg bg-gray-900">
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left border-b border-gray-800">
+                      <th className="text-left py-3 px-4">Brand</th>
+                      <th className="py-3 px-4 text-center">DESCRIPTION</th>
+                      <th className="py-3 px-4">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {brands.length > 0 ? (
+                      brands.map((brand, index) => (
+                        <tr key={index} className="border-b border-gray-800">
+                          <td className="py-3 px-4">{brand.title}</td>
+                          <td className="py-3 px-4 text-center">
+                            {(brand.description || "No description available")
+                              .split(" ")
+                              .map((word, index) => (
+                                <span key={index}>
+                                  {word}
+                                  {index === 2 ? <br /> : " "}
+                                </span>
+                              ))}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                className={`px-4 py-1 rounded-md text-sm font-medium ${
+                                  brand.isBlocked
+                                    ? "bg-green-500 hover:bg-green-600"
+                                    : "bg-red-500 hover:bg-red-600"
+                                }`}
+                                onClick={() => toggleStatus(brand._id)}
+                              >
+                                {brand.isBlocked ? "List" : "Unlist"}
+                              </button>
+                              <button
+                                className="p-1 hover:bg-gray-800 rounded"
+                                onClick={() => {
+                                  setSelectedBrand(brand);
+                                  setIsEditBrandModalOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="text-center py-4">
+                          No brands available.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className="text-center py-4">
-                        No brands available.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </main>
       </div>
-
       <AddBrandModal
         isOpen={isAddBrandModalOpen}
         onClose={() => setIsAddBrandModalOpen(false)}

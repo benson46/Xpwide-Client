@@ -72,8 +72,10 @@ export default function OrdersTable() {
         <main className="flex-1 p-6">
           <h1 className="text-2xl font-bold mb-6">Order Management</h1>
           {loading ? (
-            <p className="text-center text-gray-400">Loading orders...</p>
-          ) : error ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : error ? (
             <p className="text-center text-red-500">{error}</p>
           ) : (
             <div className="bg-gray-900 rounded-lg shadow text-white">

@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAxiosInstance } from "../utils/axios";
-import toast from "react-hot-toast";
 
 // Async Thunks
 export const adminLogin = createAsyncThunk(
@@ -9,15 +8,12 @@ export const adminLogin = createAsyncThunk(
     try {
       const response = await adminAxiosInstance.post("/login", formData);
       const adminData = response.data.admin;
-      console.log(response.data)
 
       localStorage.setItem("adminInfo", JSON.stringify(adminData));
 
       return adminData;
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Login failed";
-      toast.error(errorMessage);
-
       return rejectWithValue(errorMessage);
     }
   }

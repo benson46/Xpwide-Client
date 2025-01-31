@@ -38,7 +38,7 @@ export default function Cart() {
           );
           setSubtotal(response.data.subtotal);
         } else {
-          setProducts([]); // Ensure cart is empty if no products are returned
+          setProducts([]); 
           setSubtotal(0);
         }
       } catch (error) {

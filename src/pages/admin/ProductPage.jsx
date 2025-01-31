@@ -15,7 +15,7 @@ export default function ProductPage() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
-
+  const [loading,setLoading] = useState(true)
   const fetchProduct = async () => {
     try {
       const response = await adminAxiosInstance.get("/products")
@@ -24,10 +24,12 @@ export default function ProductPage() {
         if (a.isFeatured === b.isFeatured) return 0
         return a.isFeatured ? -1 : 1
       })
-      setProducts(sortedProducts)
+      setProducts(sortedProducts);
+      setLoading(false)
     } catch (error) {
       console.error(error)
       toast.error("Failed to fetch products.")
+      setLoading(false)
     }
   }
 
@@ -130,7 +132,13 @@ export default function ProductPage() {
 
           <div className="rounded-lg border border-gray-800 bg-gray-900">
             <div className="overflow-x-auto">
+            {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
               <table className="w-full">
+                
                 <thead>
                   <tr className="border-b border-gray-800 text-left">
                     <th className="px-6 py-4 text-sm font-medium text-gray-400">PRODUCTS</th>
@@ -142,6 +150,7 @@ export default function ProductPage() {
                     <th className="px-6 py-4 text-sm font-medium text-gray-400">ACTION</th>
                   </tr>
                 </thead>
+                
                 <tbody>
                   {products.map((product) => (
                     <tr key={product._id} className="border-b border-gray-800">
@@ -202,6 +211,7 @@ export default function ProductPage() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           </div>
 

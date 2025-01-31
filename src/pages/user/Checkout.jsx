@@ -142,7 +142,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await axiosInstance.post("/orders", {
+      const response = await axiosInstance.post("/checkout-order-success", {
         addressId: selectedAddress,
         paymentMethod,
         products: products.map((item) => ({

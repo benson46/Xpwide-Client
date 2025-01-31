@@ -4,6 +4,7 @@ import { showCustomAlert } from "./customAlert";
 import store from "../store/store";
 import { logoutAdmin } from "../store/adminSlice";
 import { logout } from "../store/userSlice";
+import toast from "react-hot-toast";
 // Create Axios instance
 export const axiosInstance = axios.create({
   baseURL: "http://localhost:5000/api/user",
@@ -42,8 +43,6 @@ axiosInstance.interceptors.response.use(
   (response) => response, // Return response as is for successful requests
   async (error) => {
     const originalRequest = error.config;
-
-    // Handle 401 Unauthorized (Token Expired)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true; // Mark the request as retried
 
@@ -68,19 +67,16 @@ axiosInstance.interceptors.response.use(
 
     // Handle 403 Forbidden (User Blocked)
     if (error.response?.status === 403) {
-      showCustomAlert(
-        "Blocked Account",
-        "Your account has been blocked. Please contact support or try logging in again."
+      toast.error(
+        '"Your account has been blocked. Please contact support or try logging in again."'
       );
+      showCustomAlert("Blocked Account");
 
-      // Clear sensitive data and redirect to login
       localStorage.removeItem("user");
       window.location.href = "/login";
     } else {
       // Handle other errors with a toast
-      showErrorToast(
-        error.response?.data?.message || "An unexpected error occurred"
-      );
+      toast.error(error.response?.data?.message|| "An unexpected error occurred")
     }
 
     return Promise.reject(error); // Reject the response on error
@@ -116,23 +112,23 @@ adminAxiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    console.log(error);
+    toast.error(error.response.data.message);
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        console.log('enna  vanna')
+        console.log("enna  vanna");
         const resultAction = await adminAxiosInstance.post(
           "/refresh-access-token"
         );
 
-        console.log('result',resultAction)
+        console.log("result", resultAction);
 
         const admin = JSON.parse(localStorage.getItem("adminInfo"));
         console.log(admin);
         admin.adminAccessToken = resultAction.data.adminAccessToken;
 
         localStorage.setItem("adminInfo", JSON.stringify(admin));
-        console.log('vaaaaa')
+        console.log("vaaaaa");
 
         return adminAxiosInstance(originalRequest);
       } catch (error) {

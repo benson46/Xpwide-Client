@@ -12,15 +12,18 @@ export default function Categories() {
   const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchCategory = async () => {
     try {
       const response = await adminAxiosInstance.get("/category");
       setCategories(response.data.categories || []);
-      console.log(response.data.categories)
+      console.log(response.data.categories);
+      setLoading(false);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch categories.");
+      setLoading(false);
     }
   };
 
@@ -109,59 +112,65 @@ export default function Categories() {
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-gray-800 bg-gray-900">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left border-b border-gray-800">
-                    <th className="text-left py-3 px-4">CATEGORY</th>
-                    <th className="py-3 px-4 text-center">ICON</th>
-                    <th className="py-3 px-4">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.length > 0 ? (
-                    categories.map((category) => (
-                      <tr
-                        key={category._id}
-                        className="border-b border-gray-800"
-                      >
-                        <td className="py-3 px-4">{category.title}</td>
-                        <td className="py-3 px-4 text-center">
-                          {category.icon}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              className={`px-4 py-1 rounded-md text-sm font-medium ${
-                                category.isBlocked
-                                  ? "bg-green-500 hover:bg-green-600"
-                                  : "bg-red-500 hover:bg-red-600"
-                              }`}
-                              onClick={() => toggleStatus(category._id)}
-                            >
-                              {category.isBlocked ? "List" : "Unlist"}
-                            </button>
-                            <button
-                              className="p-1 hover:bg-gray-800 rounded"
-                              onClick={() => {
-                                setSelectedCategory(category);
-                                setIsEditCategoryModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          </div>
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left border-b border-gray-800">
+                      <th className="text-left py-3 px-4">CATEGORY</th>
+                      <th className="py-3 px-4 text-center">ICON</th>
+                      <th className="py-3 px-4">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.length > 0 ? (
+                      categories.map((category) => (
+                        <tr
+                          key={category._id}
+                          className="border-b border-gray-800"
+                        >
+                          <td className="py-3 px-4">{category.title}</td>
+                          <td className="py-3 px-4 text-center">
+                            {category.icon}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                className={`px-4 py-1 rounded-md text-sm font-medium ${
+                                  category.isBlocked
+                                    ? "bg-green-500 hover:bg-green-600"
+                                    : "bg-red-500 hover:bg-red-600"
+                                }`}
+                                onClick={() => toggleStatus(category._id)}
+                              >
+                                {category.isBlocked ? "List" : "Unlist"}
+                              </button>
+                              <button
+                                className="p-1 hover:bg-gray-800 rounded"
+                                onClick={() => {
+                                  setSelectedCategory(category);
+                                  setIsEditCategoryModalOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="text-center py-4">
+                          No categories available.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className="text-center py-4">
-                        No categories available.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </main>

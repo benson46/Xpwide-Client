@@ -4,6 +4,7 @@ const ProductCard = ({ _id, name, price, discount, images, onClick}) => {
 
   return (
     <div className="relative group"  onClick={() => onClick(_id)}>
+      
       <div className="relative">
         <img
           src={images[0]}

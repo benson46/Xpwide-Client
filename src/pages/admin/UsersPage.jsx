@@ -9,15 +9,23 @@ export default function UsersPage() {
   const itemsPerPage = 10;
 
   const [users, setUsers] = useState([]);
+  const [loading,setLoading] = useState(true)
 
   const fetchUserList = async () => {
-    const response = await adminAxiosInstance.get("/users-list", {
-      params: {
-        page: currentPage,
-        limit: itemsPerPage,
-      },
-    });
-    setUsers(response.data.users);
+    try {
+      const response = await adminAxiosInstance.get("/users-list", {
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+        },
+      });
+      setUsers(response.data.users);
+      setLoading(false)
+    } catch (error) {
+      toast.error(error)
+      setLoading(false)
+    }
+
   };
 
   useEffect(() => {
@@ -64,6 +72,11 @@ export default function UsersPage() {
 
           {/* Users Table */}
           <div className="overflow-x-auto rounded-lg bg-gray-900">
+          {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
             <table className="w-full ">
               <thead>
                 <tr className="text-left border-b border-gray-800">
@@ -107,6 +120,7 @@ export default function UsersPage() {
                 ))}
               </tbody>
             </table>
+              )}
           </div>
 
           {/* Pagination */}
