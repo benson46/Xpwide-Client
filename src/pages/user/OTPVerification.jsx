@@ -9,7 +9,7 @@ export default function OTPVerification() {
     otp: "",
     email: location.state?.email, // email passed from the previous page
   });
-  const [timeLeft, setTimeLeft] = useState(5); 
+  const [timeLeft, setTimeLeft] = useState(60); 
   const [isResendDisabled, setIsResendDisabled] = useState(true); 
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -35,13 +35,14 @@ export default function OTPVerification() {
   };
 
   const handleResendOTP = async () => {
-    setTimeLeft(5); 
+    setTimeLeft(60); 
     setIsResendDisabled(true);
     try {
       await axiosInstance.post("/resend-otp", { email: location.state?.email });
       toast.success("OTP resent successfully");
     } catch (error) {
       toast.error("Failed to resend OTP");
+      console.log(error)
     }
   };
 
@@ -54,9 +55,10 @@ export default function OTPVerification() {
     }
 
     try {
-      if (location.state?.from === "reset-password") {
-        await axiosInstance.post("/resend-otp", data);
-        navigate("/reset-password", { state: { email: data.email } });
+      if (location.state?.from === "forgot-password") {
+        console.log(data)
+        await axiosInstance.post("/verify-otp", data);
+        navigate("/change-password", { state: { email: data.email } });
       } else if (location.state?.from === "signup") {
         await axiosInstance.post("/verify-otp", data);
         navigate("/login");

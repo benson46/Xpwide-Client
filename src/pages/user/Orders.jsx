@@ -1,11 +1,11 @@
+import React from "react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../utils/axios";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     axiosInstance
@@ -13,7 +13,10 @@ export default function Orders() {
       .then((response) => {
         setOrders(Array.isArray(response.data) ? response.data : []);
       })
-      .catch((error) => console.error("Error fetching orders:", error));
+      .catch((error) => console.error("Error fetching orders:", error))
+      .finally(()=>{
+        setLoading(false)
+      })
   }, []);
 
   const cancelOrder = (orderId, productId) => {
@@ -47,7 +50,7 @@ export default function Orders() {
     axiosInstance
       .patch(
         `/orders/${orderId}/return/${productId}`,
-        { },
+        {},
         { withCredentials: true }
       )
       .then(() => {
@@ -112,65 +115,74 @@ export default function Orders() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) =>
-              order.products.map((product, productIndex) => (
-                <tr
-                  key={`${order._id}-${product._id || productIndex}`}
-                  className="border-b"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-start space-x-4">
-                      <img
-                        src={product.images?.[0] || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-24 h-24 rounded"
-                      />
-                      <div>
-                        <h3 className="font-medium">{product.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          {product.category}
-                        </p>
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="text-center py-6">
+                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </td>
+              </tr>
+            ) : (
+              orders.map((order) =>
+                order.products.map((product, productIndex) => (
+                  <tr
+                    key={`${order._id}-${product._id || productIndex}`}
+                    className="border-b"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-start space-x-4">
+                        <img
+                          src={product.images?.[0] || "/placeholder.svg"}
+                          alt={product.name}
+                          className="w-24 h-24 rounded"
+                        />
+                        <div>
+                          <h3 className="font-medium">{product.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            {product.category}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4">{product.quantity}</td>
-                  <td className="text-center py-4 px-4">
-                    ₹{product.price * product.quantity}
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className={getStatusColor(product.status)}>
-                      {product.status}
-                    </span>
-                    {console.log(order)}
-                  </td>
-                  <td className="text-center py-4 px-4 flex flex-col space-y-2">
-                    <button
-                      onClick={() => openModal(order)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded"
-                    >
-                      VIEW
-                    </button>
-                    {product.status !== "Cancelled" &&
-                      product.status !== "Delivered" && (
-                        <button
-                          onClick={() => cancelOrder(order._id, product._id)}
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          CANCEL
-                        </button>
-                      )}
-                    {product.status === "Delivered" &&
-                      canReturnOrder(product) && (
-                        <button
-                          onClick={() => returnOrder(order._id, product._id)}
-                          className="bg-yellow-500 text-white px-3 py-1 rounded"
-                        >
-                          RETURN
-                        </button>
-                      )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="text-center py-4 px-4">
+                      {product.quantity}
+                    </td>
+                    <td className="text-center py-4 px-4">
+                      ₹{product.price * product.quantity}
+                    </td>
+                    <td className="text-center py-4 px-4">
+                      <span className={getStatusColor(product.status)}>
+                        {product.status}
+                      </span>
+                    </td>
+                    <td className="text-center py-4 px-4 flex flex-col space-y-2">
+                      <button
+                        onClick={() => openModal(order)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        VIEW
+                      </button>
+                      {product.status !== "Cancelled" &&
+                        product.status !== "Delivered" && (
+                          <button
+                            onClick={() => cancelOrder(order._id, product._id)}
+                            className="bg-red-500 text-white px-3 py-1 rounded"
+                          >
+                            CANCEL
+                          </button>
+                        )}
+                      {product.status === "Delivered" &&
+                        canReturnOrder(product) && (
+                          <button
+                            onClick={() => returnOrder(order._id, product._id)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded"
+                          >
+                            RETURN
+                          </button>
+                        )}
+                    </td>
+                  </tr>
+                ))
+              )
             )}
           </tbody>
         </table>

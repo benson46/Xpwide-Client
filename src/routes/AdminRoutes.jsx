@@ -1,3 +1,4 @@
+import React from 'react';
 import { Route, Routes } from "react-router-dom";
 import AdminLogin from "../pages/admin/AdminLogin";
 import AdminDashboard from "../pages/admin/AdminDashboard";
@@ -63,9 +64,9 @@ export default function AdminRoutes() {
       <Route
         path="order-table"
         element={
-          // <AdminAuth>
+          <AdminAuth>
             <OrdersTable />
-          // </AdminAuth>
+          </AdminAuth>
         }
       />
       <Route path="*" element={<>404 PAGE NOT FOUND</>} />

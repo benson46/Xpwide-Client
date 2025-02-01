@@ -1,4 +1,5 @@
-import { useState } from "react"
+import React, { useState } from "react";
+import PropTypes from "prop-types";
 
 export default function AddressForm({ address, onSubmit, onCancel, className }) {
   const [formValues, setFormValues] = useState({
@@ -224,3 +225,24 @@ export default function AddressForm({ address, onSubmit, onCancel, className }) 
   )
 }
 
+AddressForm.propTypes = {
+  address: PropTypes.shape({
+    name: PropTypes.string,
+    phoneNumber: PropTypes.string,
+    pincode: PropTypes.string,
+    locality: PropTypes.string,
+    address: PropTypes.string,
+    landmark: PropTypes.string,
+    city: PropTypes.string,
+    state: PropTypes.string,
+    addressType: PropTypes.string,
+  }),
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  className: PropTypes.string,
+};
+
+AddressForm.defaultProps = {
+  address: {},
+  className: "",
+};

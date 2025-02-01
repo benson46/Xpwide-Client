@@ -1,7 +1,6 @@
-"use client";
-
+import React from "react";
 import { useState, useEffect } from "react";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { axiosInstance } from "../../utils/axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -38,7 +37,7 @@ export default function Cart() {
           );
           setSubtotal(response.data.subtotal);
         } else {
-          setProducts([]); 
+          setProducts([]);
           setSubtotal(0);
         }
       } catch (error) {
@@ -58,7 +57,7 @@ export default function Cart() {
           const newQuantity = product.quantity + change;
           // Allow decreasing the quantity even if stock is 0
           if (newQuantity < 1) return product;
-          console.log('hee')
+          console.log("hee");
           // Prevent increasing the quantity beyond stock or limit (e.g., 5)
           if (newQuantity > product.stock || newQuantity > 5) return product;
           return { ...product, quantity: newQuantity };
@@ -144,8 +143,9 @@ export default function Cart() {
         <div className="text-center p-10 bg-white shadow-sm rounded-lg">
           <h2 className="text-2xl font-semibold">Your Cart is Empty</h2>
           <p className="text-gray-600 mt-2">
-            Looks like you haven't added anything to your cart yet.
+            Looks like you haven&#39;t added anything to your cart yet.
           </p>
+
           <button
             onClick={() => navigate("/shop/all")}
             className="mt-4 px-6 py-2 bg-blue-800 text-white rounded hover:bg-blue-900 transition-colors"
@@ -177,8 +177,12 @@ export default function Cart() {
                     <div className="flex justify-between">
                       <div>
                         <h3 className="font-medium">{product.name}</h3>
-                        <p className="text-sm text-gray-600">{product.category}</p>
-                        <p className="text-sm text-gray-600">{product.manufacturer}</p>
+                        <p className="text-sm text-gray-600">
+                          {product.category}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {product.manufacturer}
+                        </p>
                       </div>
                       <p className="font-medium">₹{product.price}</p>
                     </div>
@@ -192,7 +196,9 @@ export default function Cart() {
                         >
                           <Minus className="w-4 h-4" />
                         </button>
-                        <span className="w-8 text-center">{product.quantity}</span>
+                        <span className="w-8 text-center">
+                          {product.quantity}
+                        </span>
                         <button
                           onClick={() => updateQuantity(product.id, 1)}
                           disabled={
@@ -208,15 +214,17 @@ export default function Cart() {
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={product.stock === 0 || product.quantity > product.stock
-                            ? "text-red-500"
-                            : "text-green-500"
+                          className={
+                            product.stock === 0 ||
+                            product.quantity > product.stock
+                              ? "text-red-500"
+                              : "text-green-500"
                           }
                         >
-                          {product.stock === 0 || product.quantity > product.stock
+                          {product.stock === 0 ||
+                          product.quantity > product.stock
                             ? "OUT OF STOCK"
-                            : "IN STOCK"
-                          }
+                            : "IN STOCK"}
                         </span>
                         <button
                           onClick={() => removeProduct(product.id)}
@@ -240,12 +248,19 @@ export default function Cart() {
               </div>
               <button
                 disabled={
-                  products.some((product) => product.stock === 0 || product.quantity > product.stock ) ||
-                  products.length === 0||products.quantity <= 1
+                  products.some(
+                    (product) =>
+                      product.stock === 0 || product.quantity > product.stock
+                  ) ||
+                  products.length === 0 ||
+                  products.quantity <= 1
                 }
                 className={`w-full py-2 rounded transition-colors ${
                   products.length === 0 ||
-                  products.some((product) => product.stock === 0 || product.quantity > product.stock)
+                  products.some(
+                    (product) =>
+                      product.stock === 0 || product.quantity > product.stock
+                  )
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-black text-white hover:bg-gray-900"
                 }`}

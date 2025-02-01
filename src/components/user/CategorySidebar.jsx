@@ -1,6 +1,8 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../utils/axios";
+import PropTypes from "prop-types";
 
 export default function CategorySidebar({ currentCategory }) {
   const [categories, setCategories] = useState([]);
@@ -57,3 +59,8 @@ export default function CategorySidebar({ currentCategory }) {
     </aside>
   );
 }
+
+
+CategorySidebar.propTypes = {
+  currentCategory: PropTypes.string.isRequired, // Validate currentCategory as a required string
+};

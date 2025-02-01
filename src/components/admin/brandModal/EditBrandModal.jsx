@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types"
 import Modal from "../../Modal";
 
 export default function EditBrandModal({ isOpen, onClose, brand, onUpdate }) {
@@ -81,3 +82,20 @@ export default function EditBrandModal({ isOpen, onClose, brand, onUpdate }) {
     </Modal>
   );
 }
+
+EditBrandModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,  // Boolean flag for modal visibility
+  onClose: PropTypes.func.isRequired, // Function to close modal
+  onUpdate: PropTypes.func.isRequired, // Function to update brand details
+  brand: PropTypes.shape({             // Object validation for brand
+    title: PropTypes.string,
+    description: PropTypes.string,
+  }),
+};
+
+EditBrandModal.defaultProps = {
+  brand: {
+    title: "",
+    description: "",
+  },
+};

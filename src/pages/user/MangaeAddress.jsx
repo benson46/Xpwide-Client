@@ -1,6 +1,4 @@
-// Improved React Component: ManageAddress
-"use client";
-
+import React from "react";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast"; // Toast for notifications
@@ -41,6 +39,7 @@ export default function ManageAddress() {
         }
       } catch (error) {
         toast.error("An error occurred while fetching addresses.");
+        console.log(error)
       }
     };
 
@@ -81,6 +80,7 @@ export default function ManageAddress() {
         setDeletingId(null);
       } catch (error) {
         toast.error("Failed to delete address.");
+        console.log(error)
       }
     }
   };
@@ -123,6 +123,7 @@ export default function ManageAddress() {
         }
       }
     } catch (error) {
+      console.log(error)
       toast.error("Failed to save address.");
     }
   };

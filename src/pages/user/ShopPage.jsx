@@ -1,9 +1,7 @@
-"use client";
-
+import React from 'react';
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CategorySidebar from "../../components/user/CategorySidebar";
-import Pagination from "../../components/Pagination";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../../utils/axios";
 import ProductCard from "../../components/user/ProductCard";
@@ -16,7 +14,6 @@ export default function ShopPage() {
   const navigate = useNavigate();
   const { categoryTitle } = useParams();
 
-  // Fetch products based on the current category
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);

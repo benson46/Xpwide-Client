@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { adminLogin } from "../../store/adminSlice";
@@ -17,7 +18,7 @@ export default function AdminLogin() {
     try {
       dispatch(adminLogin(formData))
         .unwrap()
-        .then((res) => {
+        .then(() => {
           toast.success("Login success");
           navigate("/admin/dashboard");
         });

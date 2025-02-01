@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import PropTypes from "prop-types";
 import Modal from "../../Modal";
 
 export default function AddCategoryModal({ isOpen, onClose, onSubmit }) {
@@ -74,3 +75,9 @@ export default function AddCategoryModal({ isOpen, onClose, onSubmit }) {
     </Modal>
   );
 }
+
+AddCategoryModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired, // Boolean flag for modal visibility
+  onClose: PropTypes.func.isRequired, // Function to close modal
+  onSubmit: PropTypes.func.isRequired, // Function to submit form data
+};

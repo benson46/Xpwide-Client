@@ -1,5 +1,4 @@
 import axios from "axios";
-import { showErrorToast } from "./toastUtils";
 import { showCustomAlert } from "./customAlert";
 import store from "../store/store";
 import { logoutAdmin } from "../store/adminSlice";
@@ -7,7 +6,7 @@ import { logout } from "../store/userSlice";
 import toast from "react-hot-toast";
 // Create Axios instance
 export const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api/user",
+  baseURL: import.meta.env.VITE_USER_API_BASE_URL,
   withCredentials: true, // Send cookies to the server
 });
 
@@ -84,12 +83,12 @@ axiosInstance.interceptors.response.use(
 );
 
 export const adminAxiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api/admin",
+  baseURL: import.meta.env.VITE_ADMIN_API_BASE_URL,
   withCredentials: true,
 });
 
 export const googleAxiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api/google",
+  baseURL: import.meta.env.VITE_GOOGLE_USER_API_BASE_URL,
   withCredentials: true,
 });
 
@@ -116,19 +115,16 @@ adminAxiosInstance.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const resultAction = await adminAxiosInstance.post(
-          "/refresh-access-token"
-        );
-
+        const resultAction = await adminAxiosInstance.post("/refresh-access-token");
         const admin = JSON.parse(localStorage.getItem("adminInfo"));
-        console.log(admin);
-        admin.adminAccessToken = resultAction.data.adminAccessToken;
-
-        localStorage.setItem("adminInfo", JSON.stringify(admin));
-        console.log("vaaaaa");
-
+        
+        if(admin){
+          admin.adminAccessToken = resultAction.data.adminAccessToken;
+          localStorage.setItem("adminInfo", JSON.stringify(admin));
+        }
         return adminAxiosInstance(originalRequest);
       } catch (error) {
+        console.error("Token refresh failed:", error);
         store.dispatch(logoutAdmin());
         return Promise.reject(error);
       }

@@ -1,5 +1,7 @@
+import React from "react";
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import PropTypes from 'prop-types';
 
 export default function Modal({ isOpen, onClose, title, children }) {
   useEffect(() => {
@@ -38,3 +40,11 @@ export default function Modal({ isOpen, onClose, title, children }) {
     </div>
   );
 }
+
+
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};

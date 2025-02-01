@@ -1,6 +1,6 @@
+import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { googleAxiosInstance } from "../../utils/axios";
 import { useDispatch } from "react-redux";
 import { googleLogin, login } from "../../store/userSlice";
 import { GoogleLogin } from "@react-oauth/google";
@@ -19,12 +19,15 @@ export default function Login() {
 
   const validateFields = () => {
     const errors = {};
+
+    // Email validation
     if (!formData.email) {
       errors.email = "Email is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = "Please provide a valid email address.";
     }
 
+    // Password validation
     if (!formData.password) {
       errors.password = "Password is required.";
     }
@@ -43,25 +46,21 @@ export default function Login() {
 
   const responseMessage = async (response) => {
     try {
-      const res = await googleAxiosInstance.post("/login-google", {
-        token: response.credential,
-      });
       dispatch(googleLogin(response.credential)).then(() => {
         navigate("/");
       });
       toast.success("Login successful!");
     } catch (error) {
-      toast.error(error.response.data.message)
-      console.log(error.response.data)
+      toast.error(error.response.data.message);
+      console.log(error.response.data);
     }
   };
-  
+
   const errorMessage = (error) => {
     toast.error(`Google login failed: ${error}`);
     console.error(error);
     setErrors({ google: "Google login failed. Please try again." });
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,11 +94,12 @@ export default function Login() {
               Email address
             </label>
             <input
-              type="text"
+              type="text" // Keeps browser validation disabled
               id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={validateFields} // Calls validateFields() when input loses focus
               className={`w-full px-4 py-2 border ${
                 errors.email ? "border-red-500" : "border-gray-300"
               } rounded-md focus:outline-none focus:ring-2 ${
@@ -153,7 +153,7 @@ export default function Login() {
               </label>
             </div>
             <Link
-              to="/reset-password-email"
+              to="/change-password-email"
               className="text-sm text-blue-600 hover:text-blue-500"
             >
               Forgot Password?
@@ -184,7 +184,7 @@ export default function Login() {
           )}
 
           <p className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               to="/signup"
               className="font-medium text-blue-600 hover:text-blue-500"

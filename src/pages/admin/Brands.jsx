@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import Sidebar from "../../components/admin/Sidebar";

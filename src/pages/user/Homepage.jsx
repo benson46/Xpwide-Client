@@ -1,7 +1,4 @@
-import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
-
-import Navbar from '../../components/user/Navbar'
+import React from "react";
 import Banner from '../../components/user/Banner'
 import Categories from '../../components/user/Categories'
 import ProductGrid from '../../components/user/ProductGrid'

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { Upload, X } from "lucide-react";
@@ -350,3 +351,29 @@ export default function EditProductModal({
     </form>
   );
 }
+
+
+EditProductModal.propTypes = {
+  products: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    category: PropTypes.object.isRequired,
+    brand: PropTypes.object.isRequired,
+    price: PropTypes.number.isRequired,
+    stock: PropTypes.number.isRequired,
+    description: PropTypes.string.isRequired,
+    images: PropTypes.arrayOf(PropTypes.string),
+  }),
+  categories: PropTypes.arrayOf(PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    isBlocked: PropTypes.bool,
+  })).isRequired,
+  brands: PropTypes.arrayOf(PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    isBlocked: PropTypes.bool,
+  })).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+};

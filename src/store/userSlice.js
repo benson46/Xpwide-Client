@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { adminAxiosInstance, axiosInstance, googleAxiosInstance } from "../utils/axios";
-import toast from "react-hot-toast";
+import {axiosInstance, googleAxiosInstance } from "../utils/axios";
 
 const initialState = {
   user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user"))  : null,

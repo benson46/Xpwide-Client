@@ -1,5 +1,7 @@
+import React from "react";
 import { Pencil, Check, X } from 'lucide-react';
 import AddressForm from './AddressForm';
+import PropTypes from 'prop-types';
 
 export default function AddressCard({ 
   address, 
@@ -71,3 +73,23 @@ export default function AddressCard({
     </div>
   );
 }
+
+
+AddressCard.propTypes = {
+  address: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    addressType: PropTypes.string.isRequired,
+    phoneNumber: PropTypes.string.isRequired,
+    address: PropTypes.string.isRequired,
+    landmark: PropTypes.string,
+    city: PropTypes.string.isRequired,
+    state: PropTypes.string.isRequired,
+    pincode: PropTypes.string.isRequired,
+  }).isRequired,
+  isSelected: PropTypes.bool.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  isEditing: PropTypes.bool.isRequired,
+  onCancelEdit: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+};

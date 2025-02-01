@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types"; 
 import Modal from "../../Modal";
 
 export default function EditCategoryModal({
@@ -87,3 +88,14 @@ export default function EditCategoryModal({
     </Modal>
   );
 }
+
+EditCategoryModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired, // Boolean flag for modal visibility
+  onClose: PropTypes.func.isRequired, // Function to close modal
+  onUpdate: PropTypes.func.isRequired, // Function to update category data
+  category: PropTypes.shape({
+    _id: PropTypes.string.isRequired, // Ensure _id is a string and required
+    title: PropTypes.string.isRequired, // Ensure title is a string and required
+    icon: PropTypes.string.isRequired, // Ensure icon is a string and required
+  }).isRequired, // Ensure category object is required
+};
