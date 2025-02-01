@@ -1,5 +1,7 @@
+import React from "react";
 import { useState } from "react";
 import Modal from "../../Modal";
+import PropTypes from "prop-types";
 
 export default function AddBrandModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -73,3 +75,8 @@ export default function AddBrandModal({ isOpen, onClose, onSubmit }) {
     </Modal>
   );
 }
+AddBrandModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,   // Expecting a boolean
+  onClose: PropTypes.func.isRequired,  // Expecting a function
+  onSubmit: PropTypes.func.isRequired, // Expecting a function
+};

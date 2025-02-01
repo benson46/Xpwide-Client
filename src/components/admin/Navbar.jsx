@@ -1,3 +1,4 @@
+import React from "react";
 import { useDispatch } from "react-redux";
 import {  logoutAdmin } from "../../store/adminSlice"; // Import the logout action
 import { Search, User, LogOut } from "lucide-react";
@@ -20,6 +21,7 @@ export default function Navbar() {
       }
     } catch (error) {
       toast.error("Logout Failed");
+      console.log(error)
     }
   };
 

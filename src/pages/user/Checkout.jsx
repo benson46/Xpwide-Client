@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../utils/axios";
-import { IndianRupee, Plus, Minus } from "lucide-react";
+import { IndianRupee, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import AddressForm from "../../components/user/AddressForm";

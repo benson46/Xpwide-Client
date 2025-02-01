@@ -1,11 +1,10 @@
-'use client'
-
+import React from 'react';
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom' 
 import { axiosInstance } from '../../utils/axios'
 import toast from 'react-hot-toast' 
 
-export default function ResetPassword({ token }) {
+export default function ResetPassword() {
   const [passwords, setPasswords] = useState({
     newPassword: '',
     confirmPassword: '',
@@ -37,7 +36,7 @@ export default function ResetPassword({ token }) {
     }
   
     try {
-      const response = await axiosInstance.post('/reset-password', {
+      await axiosInstance.post('/reset-password', {
         password: passwords.newPassword,
         email,
       });

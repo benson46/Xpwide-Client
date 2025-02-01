@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { adminAxiosInstance } from "../../utils/axios"
 import Navbar from "../../components/admin/Navbar"
 import Sidebar from "../../components/admin/Sidebar"
+import toast from "react-hot-toast"
 
 export default function OrdersTable() {
   const [orders, setOrders] = useState([])
@@ -17,6 +18,7 @@ export default function OrdersTable() {
         })
         setOrders(response.data)
       } catch (error) {
+        console.log(error)
         setError("Failed to fetch orders")
       } finally {
         setLoading(false)
@@ -42,13 +44,15 @@ export default function OrdersTable() {
         ),
       )
     } catch (error) {
-      alert("Error updating status")
+      toast.error("Error updating status")
+      console.log(error)
+
     }
   }
 
   const cancelProduct = async (orderId, productId) => {
     try {
-      await adminAxiosInstance.put(`/orders/${orderId}/cancel-product/${productId}`)
+      await adminAxiosInstance.put(`/orders/${orderId}/cancel/${productId}`)
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order._id === orderId
@@ -60,7 +64,8 @@ export default function OrdersTable() {
         ),
       )
     } catch (error) {
-      alert("Error cancelling product")
+      console.log(error)
+      toast.error("Error cancelling product")
     }
   }
 

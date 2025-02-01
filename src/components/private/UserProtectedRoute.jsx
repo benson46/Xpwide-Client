@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import PropTypes from "prop-types";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
@@ -13,6 +14,9 @@ export const UserAuth = ({ children }) => {
     return <>{children}</>;
   }
 };
+UserAuth.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export const UserRequireAuth = ({ children }) => {
   const { isAuthenticated } = useSelector((state) => state.user);
@@ -21,4 +25,8 @@ export const UserRequireAuth = ({ children }) => {
   } else {
     return <>{children}</>;
   }
+};
+
+UserRequireAuth.propTypes = {
+  children: PropTypes.node.isRequired,
 };

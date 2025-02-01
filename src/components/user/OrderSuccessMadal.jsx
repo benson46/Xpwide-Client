@@ -1,3 +1,5 @@
+import React from "react";
+import PropTypes from "prop-types"; 
 export default function OrderSuccessModal({ isOpen, amount, onClose }) {
     if (!isOpen) return null;
   
@@ -36,4 +38,10 @@ export default function OrderSuccessModal({ isOpen, amount, onClose }) {
       </div>
     );
   }
+  
+  OrderSuccessModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    amount: PropTypes.number.isRequired,
+    onClose: PropTypes.func.isRequired,
+  };
   

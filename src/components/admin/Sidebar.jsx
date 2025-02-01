@@ -1,3 +1,5 @@
+import React from "react";
+import PropTypes from "prop-types"; 
 import {
   LayoutGrid,
   ShoppingCart,
@@ -28,7 +30,6 @@ export const menuItems = [
 export default function Sidebar({ activePage }) {
   const navigate = useNavigate();
   const handleClick = (path) => {
-    const link = name.toLowerCase();
     navigate(`/admin${path}`);
   };
   return (
@@ -59,3 +60,7 @@ export default function Sidebar({ activePage }) {
     </aside>
   );
 }
+
+Sidebar.propTypes = {
+  activePage: PropTypes.string.isRequired, // Expecting a string for activePage
+};

@@ -1,3 +1,5 @@
+import React from 'react';
+import PropTypes from "prop-types";
 import { useState, useRef } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
@@ -358,3 +360,23 @@ export default function AddNewProduct({
     </form>
   );
 }
+
+
+AddNewProduct.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  categories: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      isBlocked: PropTypes.bool.isRequired,
+    })
+  ).isRequired,
+  brands: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      isBlocked: PropTypes.bool.isRequired,
+    })
+  ).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+};

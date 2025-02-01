@@ -1,9 +1,9 @@
+import React from 'react';
 import { Route, Routes, useLocation } from "react-router-dom";
 import Homepage from "../pages/user/Homepage";
 import Signup from "../pages/user/Signup";
 import Login from "../pages/user/Login";
 import OTPVerification from "../pages/user/OTPVerification";
-import ResetPasswordEmail from "../pages/user/ResetPasswordEmail";
 import ResetPassword from "../pages/user/ResetPassword";
 import ProductDetails from "../pages/user/ProductDetials";
 import { UserAuth, UserRequireAuth } from "../components/private/userProtectedRoute";
@@ -15,6 +15,7 @@ import Cart from "../pages/user/Cart";
 import Profile from "../pages/user/Profile";
 import ManageAddress from "../pages/user/MangaeAddress";
 import CheckoutPage from "../pages/user/Checkout";
+import ForgotPasswordEmail from "../pages/user/ForgotPasswordEmail";
 
 function UserRoutes() {
   const location = useLocation();
@@ -37,7 +38,7 @@ function UserRoutes() {
         <Route path="signup" element={<UserRequireAuth><Signup /></UserRequireAuth>} />
         <Route path="login" element={<UserRequireAuth><Login /></UserRequireAuth>} />
         <Route path="otp-verification" element={<UserRequireAuth><OTPVerification /></UserRequireAuth>} />
-        <Route path="change-password-email" element={<UserRequireAuth><ResetPasswordEmail /></UserRequireAuth>} />
+        <Route path="change-password-email" element={<UserRequireAuth><ForgotPasswordEmail /></UserRequireAuth>} />
         <Route path="change-password" element={<UserRequireAuth><ResetPassword /></UserRequireAuth>} />
 
         {/* Protected Routes (Requires Authentication) */}

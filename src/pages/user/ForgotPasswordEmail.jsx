@@ -1,38 +1,42 @@
-'use client'
+import React from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../utils/axios"; // Make sure to import axiosInstance
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { axiosInstance } from '../../utils/axios'; // Make sure to import axiosInstance
-
-export default function ResetPasswordEmail() {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState(''); // State for handling errors
+export default function ForgotPasswordEmail() {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState(""); // State for handling errors
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post("/reset-password-otp", { email });
+      const response = await axiosInstance.post("/forgot-password-otp", {
+        email,
+      });
       console.log(response);
-      navigate('/otp-verification', { state: { email, from: 'reset-password' } });
+      navigate("/otp-verification", {
+        state: { email, from: "forgot-password" },
+      });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to send OTP.';
+      const errorMessage =
+        error.response?.data?.message || "Failed to send OTP.";
       setError(errorMessage); // Display custom error message
-      console.log('Error sending OTP:', error.response);
+      console.log("Error sending OTP:", error.response);
     }
   };
-  
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-100">
       <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-center mb-2">Reset Your Password</h2>
+        <h2 className="text-2xl font-semibold text-center mb-2">
+          Reset Your Password
+        </h2>
         <p className="text-center text-gray-600 mb-6">
           Enter your registered Email
         </p>
-        
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>} {/* Display error message */}
-        
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}{" "}
+        {/* Display error message */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"

@@ -1,8 +1,10 @@
+import React from "react";
 import Sidebar from "../../components/admin/Sidebar";
 import Navbar from "../../components/admin/Navbar";
 import Pagination from "../../components/Pagination";
 import { adminAxiosInstance } from "../../utils/axios";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,7 +35,7 @@ export default function UsersPage() {
   }, []);
 
   const handleAction = async (userId) => {
-    const response = await adminAxiosInstance.patch("/users-list", { userId });
+    await adminAxiosInstance.patch("/users-list", { userId });
     fetchUserList();
   };
 

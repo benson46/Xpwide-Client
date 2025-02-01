@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,7 +7,6 @@ import { axiosInstance } from "../../utils/axios";
 
 export default function Signup() {
   const { loading } = useSelector((state) => state.user);
-  const [error, setError] = useState(null);
   const [validateError, setValidateError] = useState({});
   const navigate = useNavigate();
 
@@ -21,7 +21,6 @@ export default function Signup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError(null);
     setValidateError({});
 
     if (formData.confirmPassword !== formData.password) {

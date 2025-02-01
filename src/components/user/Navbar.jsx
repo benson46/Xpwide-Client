@@ -1,5 +1,4 @@
-"use client";
-
+import React from "react";
 import { Link } from "react-router-dom";
 import { User, Heart, ShoppingBag, Search, LogOut } from "lucide-react";
 import { Button } from "../ui/Buttons";

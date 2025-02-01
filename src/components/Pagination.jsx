@@ -1,9 +1,12 @@
+import React from "react";
+import PropTypes from "prop-types";
+
 export default function Pagination({
-  currentPage = 1, // Default to 1 if not provided
-  totalPages = 1, // Default to 1 if not provided
+  currentPage = 1,
+  totalPages = 1, 
   onPageChange,
-  itemsPerPage = 10, // Default to 10 if not provided
-  totalItems = 0, // Default to 0 if not provided
+  itemsPerPage = 10,
+  totalItems = 0, 
 }) {
   // Ensure valid values for pagination calculations
   const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages); // Clamp between 1 and totalPages
@@ -92,3 +95,12 @@ export default function Pagination({
     </div>
   );
 }
+
+
+Pagination.propTypes = {
+  currentPage: PropTypes.number,
+  totalPages: PropTypes.number,
+  onPageChange: PropTypes.func.isRequired,
+  itemsPerPage: PropTypes.number,
+  totalItems: PropTypes.number,
+};
