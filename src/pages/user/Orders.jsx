@@ -16,7 +16,7 @@ export default function Orders() {
       .catch((error) => console.error("Error fetching orders:", error))
       .finally(()=>{
         setLoading(false)
-      })
+      }) 
   }, []);
 
   const cancelOrder = (orderId, productId) => {
