@@ -7,6 +7,7 @@ import Sidebar from "../../components/admin/Sidebar"
 import Navbar from "../../components/admin/Navbar"
 import { adminAxiosInstance } from "../../utils/axios"
 import toast from "react-hot-toast"
+import Pagination from "../../components/Pagination"
 
 export default function ProductPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -15,16 +16,24 @@ export default function ProductPage() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
-  const [loading,setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   const fetchProduct = async () => {
     try {
-      const response = await adminAxiosInstance.get("/products")
+      const response = await adminAxiosInstance.get("/products", {
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+        },
+      })
       // Sort products to show featured items first
       const sortedProducts = (response.data.products || []).sort((a, b) => {
         if (a.isFeatured === b.isFeatured) return 0
         return a.isFeatured ? -1 : 1
       })
-      setProducts(sortedProducts);
+      setProducts(sortedProducts)
       setLoading(false)
     } catch (error) {
       console.error(error)
@@ -57,7 +66,7 @@ export default function ProductPage() {
     fetchProduct()
     fetchCategory()
     fetchBrands()
-  }, [])
+  }, [currentPage])
 
   const handleAddProduct = async (formData) => {
     try {
@@ -79,30 +88,21 @@ export default function ProductPage() {
 
   const handleEditProduct = async (formData) => {
     try {
-      // Create a Set of product names for fast lookup
-      const productNamesSet = new Set(products.map(product => product.name.toLowerCase()));
+      const productNamesSet = new Set(products.map(product => product.name.toLowerCase()))
   
-      // Check if the product name already exists (excluding the current product)
       if (productNamesSet.has(formData.name.toLowerCase()) && products.some((product, index) => product.name.toLowerCase() === formData.name.toLowerCase() && index !== formData.index)) {
-        toast.error("Product must be unique");
-        return;
+        toast.error("Product must be unique")
+        return
       }
   
-      console.log(formData.id);
-      await adminAxiosInstance.put(`/products/${formData.id}`, formData);
-      fetchProduct();
-      toast.success("Product updated successfully!");
+      await adminAxiosInstance.put(`/products/${formData.id}`, formData)
+      fetchProduct()
+      toast.success("Product updated successfully!")
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error updating product.");
+      console.error(error)
+      toast.error(error.response?.data?.message || "Error updating product.")
     }
   };
-  
-
-  const handleAction = async (productId) => {
-    await adminAxiosInstance.patch("/products", { productId })
-    fetchProduct()
-  }
 
   const handleFeatureToggle = async (productId) => {
     try {
@@ -113,6 +113,10 @@ export default function ProductPage() {
       console.error(error)
       toast.error("Failed to update product feature status.")
     }
+  }
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber)
   }
 
   return (
@@ -216,28 +220,29 @@ export default function ProductPage() {
               )}
             </div>
           </div>
+            <Pagination
+              totalItems={products.length} 
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
 
-          <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Product">
+          <Modal isOpen={isAddModalOpen} setIsOpen={setIsAddModalOpen}>
             <AddNewProduct
-              onClose={() => setIsAddModalOpen(false)}
               categories={categories}
               brands={brands}
-              onSubmit={handleAddProduct}
+              handleAddProduct={handleAddProduct}
+              setIsAddModalOpen={setIsAddModalOpen}
             />
           </Modal>
 
-          <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Product">
+          <Modal isOpen={isEditModalOpen} setIsOpen={setIsEditModalOpen}>
             <EditProduct
-              onClose={() => setIsEditModalOpen(false)}
-              products={selectedProduct}
-              onUpdate={(updatedProduct) =>
-                handleEditProduct({
-                  ...updatedProduct,
-                  index: products.findIndex((p) => p._id === selectedProduct._id),
-                })
-              }
-              brands={brands}
+              product={selectedProduct}
               categories={categories}
+              brands={brands}
+              handleEditProduct={handleEditProduct}
+              setIsEditModalOpen={setIsEditModalOpen}
             />
           </Modal>
         </main>
@@ -245,4 +250,3 @@ export default function ProductPage() {
     </div>
   )
 }
-

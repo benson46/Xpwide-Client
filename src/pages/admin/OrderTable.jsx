@@ -1,73 +1,128 @@
-import React, { useEffect, useState } from "react"
-import { adminAxiosInstance } from "../../utils/axios"
-import Navbar from "../../components/admin/Navbar"
-import Sidebar from "../../components/admin/Sidebar"
-import toast from "react-hot-toast"
+import React, { useEffect, useState } from "react";
+import { adminAxiosInstance } from "../../utils/axios";
+import Navbar from "../../components/admin/Navbar";
+import Sidebar from "../../components/admin/Sidebar";
+import toast from "react-hot-toast";
+import Pagination from "../../components/Pagination";
 
 export default function OrdersTable() {
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const response = await adminAxiosInstance.get("/orders", {
           withCredentials: true,
-        })
-        setOrders(response.data)
+          params: {
+            page: currentPage,
+            limit: itemsPerPage,
+          },
+        });
+        setOrders(response.data);
       } catch (error) {
-        console.log(error)
-        setError("Failed to fetch orders")
+        console.log(error);
+        setError("Failed to fetch orders");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchOrders()
-  }, [])
+    };
+    fetchOrders();
+  }, [currentPage]);
 
   const updateStatus = async (orderId, productId, newStatus) => {
     try {
       await adminAxiosInstance.put(`/orders/${orderId}/status`, {
         status: newStatus,
         productId: productId,
-      })
+      });
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order._id === orderId
             ? {
                 ...order,
-                products: order.products.map((p) => (p.productId === productId ? { ...p, status: newStatus } : p)),
+                products: order.products.map((p) =>
+                  p.productId === productId ? { ...p, status: newStatus } : p
+                ),
               }
-            : order,
-        ),
-      )
+            : order
+        )
+      );
     } catch (error) {
-      toast.error("Error updating status")
-      console.log(error)
-
+      toast.error("Error updating status");
+      console.log(error);
     }
-  }
+  };
 
   const cancelProduct = async (orderId, productId) => {
     try {
-      await adminAxiosInstance.put(`/orders/${orderId}/cancel/${productId}`)
+      await adminAxiosInstance.put(`/orders/${orderId}/cancel/${productId}`);
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order._id === orderId
             ? {
                 ...order,
-                products: order.products.map((p) => (p.productId === productId ? { ...p, status: "Cancelled" } : p)),
+                products: order.products.map((p) =>
+                  p.productId === productId ? { ...p, status: "Cancelled" } : p
+                ),
               }
-            : order,
-        ),
-      )
+            : order
+        )
+      );
     } catch (error) {
-      console.log(error)
-      toast.error("Error cancelling product")
+      console.log(error);
+      toast.error("Error cancelling product");
     }
-  }
+  };
+
+  const handleReturnAction = async (orderId, productId, action) => {
+    try {
+      await adminAxiosInstance.patch(
+        `/orders/${orderId}/handle-return/${productId}`,
+        {
+          action,
+        }
+      );
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                products: order.products.map((product) =>
+                  product.productId === productId
+                    ? {
+                        ...product,
+                        status:
+                          action === "approve"
+                            ? "Return Approved"
+                            : "Return Rejected",
+                      }
+                    : product
+                ),
+              }
+            : order
+        )
+      );
+      toast.success(`Return request ${action}d`);
+    } catch (error) {
+      console.error("Error handling return request:", error);
+      toast.error(`Failed to ${action} return`);
+    }
+  };
+
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -75,12 +130,14 @@ export default function OrdersTable() {
       <div className="flex">
         <Sidebar activePage="Orders" />
         <main className="flex-1 p-6">
-          <h1 className="text-2xl font-bold mb-6">Order Management</h1>
+          <h1 className="text-2xl text-white font-bold mb-6">
+            Order Management
+          </h1>
           {loading ? (
-                <div className="flex justify-center items-center h-40">
-                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : error ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
             <p className="text-center text-red-500">{error}</p>
           ) : (
             <div className="bg-gray-900 rounded-lg shadow text-white">
@@ -96,7 +153,7 @@ export default function OrdersTable() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => (
+                  {currentOrders.map((order) => (
                     <tr key={order._id} className="border-b">
                       <td className="p-4">{order._id}</td>
                       <td className="p-4">{order.customerName}</td>
@@ -105,32 +162,95 @@ export default function OrdersTable() {
                           {order.products.map((product) => (
                             <div key={product.productId} className="space-y-1">
                               <div className="font-medium">{product.name}</div>
-                              <div className="text-sm text-gray-500">SKU: {product.sku || "N/A"}</div>
-                              <div className="text-sm text-gray-500">Status: {product.status}</div>
+                              <div className="text-sm text-gray-500">
+                                SKU: {product.sku || "N/A"}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Status: {product.status}
+                              </div>
                               <div className="flex items-center gap-2">
-                                <select
-                                  value={product.status}
-                                  onChange={(e) => updateStatus(order._id, product.productId, e.target.value)}
-                                  className="border rounded px-2 py-1 text-sm text-black"
-                                  disabled={product.status === "Cancelled" || product.status === "Delivered"}
-                                >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Shipped">Shipped</option>
-                                  <option value="Delivered">Delivered</option>
-                                  <option value="Cancelled">Cancelled</option>
-                                </select>
-                                {product.status !== "Cancelled" && product.status !== "Delivered" && (
+                                {product.status === "Return Pending" ? (
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() =>
+                                        handleReturnAction(
+                                          order._id,
+                                          product.productId,
+                                          "approve"
+                                        )
+                                      }
+                                      className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                      Approve Return
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleReturnAction(
+                                          order._id,
+                                          product.productId,
+                                          "reject"
+                                        )
+                                      }
+                                      className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                      Reject Return
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <select
+                                    value={
+                                      product.status === "Return Rejected"
+                                        ? "Delivered"
+                                        : product.status === 'Return Approved' ? "Return Approved" : product.status
+                                    }
+                                    onChange={(e) =>
+                                      updateStatus(
+                                        order._id,
+                                        product.productId,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="border rounded px-2 py-1 text-sm text-black"
+                                    disabled={
+                                      product.status === "Delivered" ||
+                                      product.status === "Return Rejected" ||
+                                      product.status === "Return Approved" ||
+                                      product.status === "Cancelled"
+                                    }
+                                  >
+                                  {product.status=== 'Return Approved'&&(
+                                    <option value="Return Approved">Return Approved</option>
+                                  )}
+                                    <option value="Pending">Pending</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Delivered">Delivered</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                  </select>
+                                )}
+                                {product.status !== "Cancelled" &&
+                                product.status !== "Delivered" &&
+                                product.status !== "Return Pending" &&
+                                product.status !== "Return Rejected" &&
+                                product.status !== "Return Accepted" ? ( // Hide cancel option for certain statuses
                                   <button
-                                    onClick={() => cancelProduct(order._id, product.productId)}
+                                    onClick={() =>
+                                      cancelProduct(
+                                        order._id,
+                                        product.productId
+                                      )
+                                    }
                                     className="bg-red-500 text-white px-3 py-1 rounded text-sm"
                                   >
                                     Cancel Product
                                   </button>
-                                )}
+                                ) : null}
                                 {product.status === "Cancelled" && (
-                                  <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded text-sm">Cancelled</span>
+                                  <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded text-sm">
+                                    Cancelled
+                                  </span>
                                 )}
-                                {product.status === "Delivered" && (
+                                {(product.status === "Delivered" ||
+                                  product.status === "Return Rejected") && (
                                   <span className="bg-green-200 text-green-600 px-3 py-1 rounded text-sm">
                                     Delivered
                                   </span>
@@ -140,7 +260,9 @@ export default function OrdersTable() {
                           ))}
                         </div>
                       </td>
-                      <td className="p-4">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="p-4">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="p-4">₹{order.totalAmount}</td>
                       <td className="p-4">
                         <button
@@ -156,6 +278,14 @@ export default function OrdersTable() {
               </table>
             </div>
           )}
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={orders.length}
+          />
         </main>
       </div>
       {selectedOrder && (
@@ -184,13 +314,15 @@ export default function OrdersTable() {
             <p>
               <strong>Total:</strong> ₹{selectedOrder.totalAmount}{" "}
             </p>
-            <button onClick={() => setSelectedOrder(null)} className="mt-4 bg-red-500 px-3 py-1 rounded text-white">
+            <button
+              onClick={() => setSelectedOrder(null)}
+              className="mt-4 bg-red-500 px-3 py-1 rounded text-white"
+            >
               Close
             </button>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
-
