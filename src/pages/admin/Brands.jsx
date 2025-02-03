@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { useEffect, useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import Sidebar from "../../components/admin/Sidebar";
@@ -7,6 +7,7 @@ import AddBrandModal from "../../components/admin/brandModal/AddBrandMoal";
 import EditBrandModal from "../../components/admin/brandModal/EditBrandModal"; // Import the edit modal
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
+import Pagination from "../../components/Pagination";
 
 export default function Brands() {
   const [isAddBrandModalOpen, setIsAddBrandModalOpen] = useState(false);
@@ -15,16 +16,18 @@ export default function Brands() {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const fetchBrand = async () => {
     try {
       const response = await adminAxiosInstance.get("/brands");
       setBrands(response.data.brands || []);
-      setLoading(false)
+      setLoading(false);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch brands.");
-      setLoading(false)
-
+      setLoading(false);
     }
   };
 
@@ -97,6 +100,15 @@ export default function Brands() {
       console.error(error);
       toast.error("Failed to update status.");
     }
+  };
+
+  const totalPages = Math.ceil(brands.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBrands = brands.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
@@ -187,6 +199,14 @@ export default function Brands() {
               )}
             </div>
           </div>
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={brands.length}
+          />
         </main>
       </div>
       <AddBrandModal

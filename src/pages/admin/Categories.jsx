@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { useEffect, useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import Sidebar from "../../components/admin/Sidebar";
@@ -7,6 +7,7 @@ import AddCategoryModal from "../../components/admin/categoryModal/AddCategoryMo
 import EditCategoryModal from "../../components/admin/categoryModal/EditCategoryModal";
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
+import Pagination from "../../components/Pagination";
 
 export default function Categories() {
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -14,12 +15,18 @@ export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [totalCategories, setTotalCategories] = useState(0);
+  const itemsPerPage = 10;
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCategory = async () => {
     try {
       const response = await adminAxiosInstance.get("/category");
       setCategories(response.data.categories || []);
-      console.log(response.data.categories);
+      setTotalCategories(
+        response.data.totalCategories || response.data.categories.length
+      ); // Fix here
       setLoading(false);
     } catch (error) {
       console.error(error);
@@ -90,6 +97,15 @@ export default function Categories() {
       console.error(error);
       toast.error("Failed to update category status.");
     }
+  };
+
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCategory = categories.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
@@ -173,6 +189,14 @@ export default function Categories() {
                 </table>
               )}
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              totalItems={categories.length}
+            />
           </div>
         </main>
       </div>

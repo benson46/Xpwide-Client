@@ -3,27 +3,27 @@ import PropTypes from "prop-types";
 
 export default function Pagination({
   currentPage = 1,
-  totalPages = 1, 
+  totalPages = 1,
   onPageChange,
   itemsPerPage = 10,
-  totalItems = 0, 
+  totalItems = 0,
 }) {
   // Ensure valid values for pagination calculations
   const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages); // Clamp between 1 and totalPages
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  // Handle case when there are no items
+  const startItem = totalItems === 0 ? 0 : Math.min((validCurrentPage - 1) * itemsPerPage + 1, totalItems);
+  const endItem = totalItems === 0 ? 0 : Math.min(validCurrentPage * itemsPerPage, totalItems);
 
   return (
     <div className="flex items-center justify-between px-4 py-3 sm:px-6">
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div className="text-sm text-gray-400">
           Showing{" "}
-          <span className="font-medium text-white">
-            {Math.min((validCurrentPage - 1) * itemsPerPage + 1, totalItems)}
-          </span>{" "}
+          <span className="font-medium text-white">{startItem}</span>{" "}
           -{" "}
-          <span className="font-medium text-white">
-            {Math.min(validCurrentPage * itemsPerPage, totalItems)}
-          </span>{" "}
+          <span className="font-medium text-white">{endItem}</span>{" "}
           of <span className="font-medium text-white">{totalItems}</span>{" "}
           results
         </div>
@@ -35,7 +35,7 @@ export default function Pagination({
             {/* Previous Button */}
             <button
               onClick={() => onPageChange(validCurrentPage - 1)}
-              disabled={validCurrentPage === 1}
+              disabled={validCurrentPage === 1 || totalItems === 0}
               className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Previous</span>
@@ -58,6 +58,7 @@ export default function Pagination({
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
+                disabled={totalItems === 0}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-800
                     ${
                       validCurrentPage === page
@@ -72,7 +73,7 @@ export default function Pagination({
             {/* Next Button */}
             <button
               onClick={() => onPageChange(validCurrentPage + 1)}
-              disabled={validCurrentPage === totalPages}
+              disabled={validCurrentPage === totalPages || totalItems === 0}
               className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-800 hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Next</span>
@@ -95,7 +96,6 @@ export default function Pagination({
     </div>
   );
 }
-
 
 Pagination.propTypes = {
   currentPage: PropTypes.number,

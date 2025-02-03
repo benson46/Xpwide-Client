@@ -14,9 +14,9 @@ export default function Orders() {
         setOrders(Array.isArray(response.data) ? response.data : []);
       })
       .catch((error) => console.error("Error fetching orders:", error))
-      .finally(()=>{
-        setLoading(false)
-      }) 
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const cancelOrder = (orderId, productId) => {
@@ -46,30 +46,33 @@ export default function Orders() {
       .catch((error) => console.error("Error cancelling order:", error));
   };
 
-  const returnOrder = (orderId, productId) => {
-    axiosInstance
-      .patch(
+  const returnOrder = async (orderId, productId) => {
+    try {
+      const response = await axiosInstance.patch(
         `/orders/${orderId}/return/${productId}`,
-        {}, 
+        {},
         { withCredentials: true }
-      )
-      .then(() => {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId
-              ? {
-                  ...order,
-                  products: order.products.map((product) =>
-                    product._id === productId
-                      ? { ...product, status: "RETURN INITIATED" }
-                      : product
-                  ),
-                }
-              : order
-          )
-        );
-      })
-      .catch((error) => console.error("Error returning order:", error));
+      );
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                products: order.products.map((product) =>
+                  product._id === productId
+                    ? { ...product, status: "Return Pending" }
+                    : product
+                ),
+              }
+            : order
+        )
+      );
+      toast.success("Return request initiated");
+    } catch (error) {
+      console.error("Error returning order:", error);
+      toast.error("Failed to initiate return");
+    }
   };
 
   const getStatusColor = (status) => {
@@ -82,23 +85,30 @@ export default function Orders() {
         return "text-green-500";
       case "Cancelled":
         return "text-red-500";
-      case "REFUND COMPLETED":
+      case "Return Pending":
+        return "text-yellow-500";
+      case "Return Approved":
+        return "text-green-500";
+      case "Return Rejected":
         return "text-red-500";
       default:
         return "text-gray-500";
     }
   };
-
   const canReturnOrder = (product) => {
-    if (product.status !== "Delivered" || !product.deliveryDate) return false;
-    const today = new Date();
-    const deliveryDate = new Date(product.deliveryDate);
-    return (today - deliveryDate) / (1000 * 60 * 60) <= 15;
-    // (1000 * 60 * 60 * 24) <= 7;
-  };
+    if (product.status !== "Delivered") return false;
 
-  const openModal = (order) => setSelectedOrder(order);
-  const closeModal = () => setSelectedOrder(null);
+    // Get the delivery date
+    const deliveredDate = new Date(product.deliveryDate);
+    const currentDate = new Date();
+
+    // Calculate the difference in days
+    const timeDifference = currentDate - deliveredDate;
+    const daysDifference = timeDifference / (1000 * 3600 * 24);
+
+    // Return true if the order was delivered within 7 days, otherwise false
+    return daysDifference <= 7;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -161,15 +171,15 @@ export default function Orders() {
                       >
                         VIEW
                       </button>
-                      {product.status !== "Cancelled" &&
-                        product.status !== "Delivered" && (
+                      {/* {product.status !== "Cancelled" &&
+                         && (
                           <button
                             onClick={() => cancelOrder(order._id, product._id)}
                             className="bg-red-500 text-white px-3 py-1 rounded"
                           >
                             CANCEL
                           </button>
-                        )}
+                        )} */}
                       {product.status === "Delivered" &&
                         canReturnOrder(product) && (
                           <button
@@ -177,6 +187,19 @@ export default function Orders() {
                             className="bg-yellow-500 text-white px-3 py-1 rounded"
                           >
                             RETURN
+                          </button>
+                        )}
+                      {/* Disable cancel button if the product status is "Return Pending" */}
+                      {product.status !== "Return Pending" &&
+                        product.status !== "Return Rejected" &&
+                        product.status !== "Return Approved" &&
+                        product.status !== "Cancelled" &&
+                        product.status !== "Delivered" && (
+                          <button
+                            onClick={() => cancelOrder(order._id, product._id)}
+                            className="bg-red-500 text-white px-3 py-1 rounded"
+                          >
+                            CANCEL
                           </button>
                         )}
                     </td>
