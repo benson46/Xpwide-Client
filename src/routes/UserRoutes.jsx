@@ -16,6 +16,7 @@ import Profile from "../pages/user/Profile";
 import ManageAddress from "../pages/user/MangaeAddress";
 import CheckoutPage from "../pages/user/Checkout";
 import ForgotPasswordEmail from "../pages/user/ForgotPasswordEmail";
+import Wallet from '../pages/user/Wallet';
 
 function UserRoutes() {
   const location = useLocation();
@@ -53,6 +54,7 @@ function UserRoutes() {
         <Route path="address" element={<UserAuth><ManageAddress /></UserAuth>} />
         <Route path="orders" element={<UserAuth><Orders /></UserAuth>} />
         <Route path="order-detials" element={<UserAuth><OrderDetails /></UserAuth>} />
+        <Route path="Wallet" element={<UserAuth><Wallet /></UserAuth>} />
 
         {/* Catch-all Route */}
         <Route path="*" element={<>404 PAGE NOT FOUND</>} />

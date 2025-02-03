@@ -231,7 +231,7 @@ export default function OrdersTable() {
                                 product.status !== "Delivered" &&
                                 product.status !== "Return Pending" &&
                                 product.status !== "Return Rejected" &&
-                                product.status !== "Return Accepted" ? ( // Hide cancel option for certain statuses
+                                product.status !== "Return Approved" ? ( // Hide cancel option for certain statuses
                                   <button
                                     onClick={() =>
                                       cancelProduct(
