@@ -1,33 +1,54 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Download, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
+import { axiosInstance } from "../../utils/axios"
 
 export default function Wallet() {
   const [balance, setBalance] = useState(0)
-  const [amount, setAmount] = useState("5000")
-  const [transactions, setTransactions] = useState([
-    { type: "credit", amount: 2000, date: "2024-02-03", description: "Order Refund #1234" },
-    { type: "debit", amount: 1500, date: "2024-02-02", description: "Purchase Order #5678" },
-    { type: "credit", amount: 3000, date: "2024-02-01", description: "Wallet Recharge" },
-    { type: "debit", amount: 2500, date: "2024-01-31", description: "Purchase Order #4321" },
-    { type: "credit", amount: 5000, date: "2024-01-30", description: "Welcome Bonus" },
-  ])
+  const [amount, setAmount] = useState(0)
+  const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const handleAddMoney = () => {
+  // Fetch wallet details when the component mounts
+  useEffect(() => {
+    const fetchWalletDetails = async () => {
+      try {
+        const response = await axiosInstance.get("/wallet");
+        console.log(response.data)
+        setBalance(response.data.wallet.balance);
+        setTransactions(response.data.wallet.transactions);
+      } catch (err) {
+        setError("Failed to fetch wallet details.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchWalletDetails();
+  }, [])
+
+  // Add money to the wallet by calling the backend API
+  const handleAddMoney = async () => {
     const numAmount = Number.parseFloat(amount)
-    if (!isNaN(numAmount)) {
-      setBalance((prev) => prev + numAmount)
-      setTransactions((prev) => [
-        {
-          type: "credit",
-          amount: numAmount,
-          date: new Date().toISOString().split("T")[0],
-          description: "Wallet Recharge",
-        },
-        ...prev,
-      ])
-      setAmount("5000")
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axiosInstance.post("/wallet", {
+        amount: numAmount,
+        paymentStatus: "success" // For simplicity, assuming payment status is "success"
+      });
+      console.log('respnse 2',response)
+      setBalance(response.data.wallet.balance);
+      setTransactions(response.data.wallet.transactions);
+      setAmount("5000"); // Reset input field
+    } catch (err) {
+      setError("Failed to update wallet.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -44,6 +65,8 @@ export default function Wallet() {
           <div className="text-2xl font-medium text-primary">Balance: ₹ {balance.toLocaleString("en-IN")}</div>
         </div>
 
+        {error && <div className="text-red-500 mb-4">{error}</div>} {/* Error Message */}
+
         <div className="grid md:grid-cols-2 gap-8">
           {/* Add Money Section */}
           <div className="bg-white p-6 rounded-lg shadow-md sticky top-6">
@@ -57,6 +80,7 @@ export default function Wallet() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="pl-7 p-2 w-full border rounded-md text-lg"
+                  disabled={loading} // Disable input while loading
                 />
               </div>
             </div>
@@ -67,6 +91,7 @@ export default function Wallet() {
                   key={value}
                   onClick={() => handleQuickAdd(value)}
                   className="flex-1 py-2 text-base bg-gray-100 border rounded-md hover:bg-gray-200"
+                  disabled={loading} // Disable buttons while loading
                 >
                   + ₹{value}
                 </button>
@@ -76,8 +101,9 @@ export default function Wallet() {
             <button
               onClick={handleAddMoney}
               className="w-full py-2 bg-green-500 hover:bg-green-600 text-white text-lg rounded-md"
+              disabled={loading} // Disable button while loading
             >
-              Add to Wallet
+              {loading ? "Adding..." : "Add to Wallet"}
             </button>
           </div>
 
@@ -104,7 +130,8 @@ export default function Wallet() {
                       )}
                       <div>
                         <p className="font-medium text-base">{transaction.description}</p>
-                        <p className="text-sm text-gray-500">{transaction.date}</p>
+                        {console.log(transaction)}
+                        <p className="text-sm text-gray-500">{transaction.transactionDate}</p>
                       </div>
                     </div>
                     <span

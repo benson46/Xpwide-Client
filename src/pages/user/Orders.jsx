@@ -19,32 +19,38 @@ export default function Orders() {
       });
   }, []);
 
-  const cancelOrder = (orderId, productId) => {
-    axiosInstance
-      .patch(
+  const cancelOrder = async (orderId, productId) => {
+    try {
+      const response = await axiosInstance.patch(
         `/orders/${orderId}/cancel/${productId}`,
         {},
         { withCredentials: true }
-      )
-      .then((response) => {
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId
-              ? {
-                  ...order,
-                  products: order.products.map((product) =>
-                    product._id === productId
-                      ? { ...product, status: "Cancelled" }
-                      : product
-                  ),
-                  status: response.data.order.status,
-                }
-              : order
-          )
-        );
-      })
-      .catch((error) => console.error("Error cancelling order:", error));
+      );
+  
+      // Update the UI with new order status from the response
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                products: order.products.map((product) =>
+                  product._id === productId
+                    ? { ...product, status: "Cancelled" }
+                    : product
+                ),
+                status: response.data.order.status, // Ensure order status is updated
+              }
+            : order
+        )
+      );
+  
+      toast.success("Order cancelled successfully");
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast.error("Failed to cancel order");
+    }
   };
+  
 
   const returnOrder = async (orderId, productId) => {
     try {

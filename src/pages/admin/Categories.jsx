@@ -17,7 +17,6 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [totalCategories, setTotalCategories] = useState(0);
   const itemsPerPage = 10;
-
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCategory = async () => {
