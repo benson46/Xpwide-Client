@@ -14,6 +14,7 @@ const Wishlist = () => {
   const fetchWishlist = async () => {
     try {
       const { data } = await axiosInstance.get("/get-wishlist");
+      console.log(data)
       setWishlistItems(data.wishlists || []);
     } catch (error) {
       console.error("Error fetching wishlist", error);
@@ -29,9 +30,11 @@ const Wishlist = () => {
       // Check if the item is already in the cart
       const itemInCart = cartItems.some((cartItem) => {
         console.log(`cart item Id : ${JSON.stringify(cartItem.productId)}`);
-        return cartItem.productId.toString() === item._id.toString();
+        return cartItem.productId._id.toString() === item._id.toString();
       });
       console.log(`item: ${JSON.stringify(item)}`)
+
+      console.log(itemInCart)
 
       if (itemInCart) {
         // Item is already in the cart, show a toast message
@@ -107,10 +110,10 @@ const Wishlist = () => {
                       {product.name}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                      {product.category}
+                      {product.category.title}
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600">
-                      {product.publisher}
+                      {product.brand.title}
                     </p>
                   </div>
                 </div>
