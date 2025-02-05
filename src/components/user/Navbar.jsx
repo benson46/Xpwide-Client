@@ -106,8 +106,10 @@ function Navbar() {
                 size="icon"
                 className="text-white hover:text-gray-300"
               >
+                <Link to="/wishlist">
                 <Heart className="h-5 w-5" />
                 <span className="sr-only">Wishlist</span>
+                </Link>
               </Button>
 
               <Button
