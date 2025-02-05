@@ -29,11 +29,9 @@ const Wishlist = () => {
       // Check if the item is already in the cart
       const itemInCart = cartItems.some((cartItem) => {
         console.log(`cart item Id : ${JSON.stringify(cartItem.productId)}`);
-        return cartItem.productId._id.toString() === item._id.toString();
+        return cartItem.productId.toString() === item._id.toString();
       });
       console.log(`item: ${JSON.stringify(item)}`)
-
-      console.log(itemInCart)
 
       if (itemInCart) {
         // Item is already in the cart, show a toast message
