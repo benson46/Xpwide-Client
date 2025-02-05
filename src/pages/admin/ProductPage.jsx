@@ -227,22 +227,24 @@ export default function ProductPage() {
               onPageChange={handlePageChange}
             />
 
-          <Modal isOpen={isAddModalOpen} setIsOpen={setIsAddModalOpen}>
+          <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
             <AddNewProduct
               categories={categories}
               brands={brands}
               handleAddProduct={handleAddProduct}
-              setIsAddModalOpen={setIsAddModalOpen}
+              onClose={() => setIsAddModalOpen(false)}
             />
           </Modal>
 
-          <Modal isOpen={isEditModalOpen} setIsOpen={setIsEditModalOpen}>
+          <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
             <EditProduct
               product={selectedProduct}
               categories={categories}
               brands={brands}
               handleEditProduct={handleEditProduct}
               setIsEditModalOpen={setIsEditModalOpen}
+              onClose={() => setIsEditModalOpen(false)}
+
             />
           </Modal>
         </main>

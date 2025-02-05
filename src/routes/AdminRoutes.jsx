@@ -8,6 +8,7 @@ import ProductPage from "../pages/admin/ProductPage";
 import Brands from "../pages/admin/Brands";
 import { AdminAuth, AdminRequireAuth } from "../components/private/AdminProtectedRoute";
 import OrdersTable from "../pages/admin/OrderTable";
+import Coupons from '../pages/admin/Coupon';
 
 export default function AdminRoutes() {
   return (
@@ -66,6 +67,14 @@ export default function AdminRoutes() {
         element={
           <AdminAuth>
             <OrdersTable />
+          </AdminAuth>
+        }
+      />
+      <Route
+        path="coupons"
+        element={
+          <AdminAuth>
+            <Coupons />
           </AdminAuth>
         }
       />
