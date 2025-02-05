@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import AddressForm from "../../components/user/AddressForm";
 import AddressCard from "../../components/user/AddressCard";
 import OrderSuccessModal from "../../components/user/OrderSuccessMadal";
+import RazorPay from "../../components/user/razorpay-payment/RazorPay";
 
 export default function CheckoutPage() {
   const user = useSelector((state) => state.user?.user);
@@ -174,7 +175,7 @@ export default function CheckoutPage() {
       </div>
     );
   }
-  console.log(products);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-8">Checkout</h1>
@@ -207,7 +208,6 @@ export default function CheckoutPage() {
                       </span>
                     ) : (
                       <span className="text-green-500">
-                        {console.log(JSON.stringify(product.quantity))}
                         Quantity: {product.quantity}
                       </span>
                     )}
@@ -294,8 +294,8 @@ export default function CheckoutPage() {
                 <input
                   type="radio"
                   name="payment"
-                  value="razorpay"
-                  checked={paymentMethod === "razorpay"}
+                  value="Razorpay"
+                  checked={paymentMethod === "Razorpay"}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="mr-4"
                 />
@@ -416,16 +416,22 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <button
-            onClick={handlePlaceOrder}
-            disabled={
-              !selectedAddress ||
-              products.some((product) => product.productId.stock === 0)
-            }
-            className="mt-6 w-full py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Place Order
-          </button>
+          <div className="mt-6">
+            {paymentMethod === "Razorpay" ? (
+              <RazorPay
+                amount={orderSummary.total}
+                handlePlaceOrder={handlePlaceOrder}
+                isWallet={paymentMethod === "wallet"}
+              />
+            ) : (
+              <button
+                onClick={handlePlaceOrder}
+                className="w-full py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
+              >
+                Place Order (Cash on Delivery)
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <OrderSuccessModal

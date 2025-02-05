@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { axiosInstance } from "../../../utils/axios";
 import { useRazorpay } from "react-razorpay";
 
-const RazorPay = () => {
+const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
   const { error, isLoading, Razorpay } = useRazorpay();
   const [userInfo, setUserInfo] = useState({});
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
@@ -10,14 +11,14 @@ const RazorPay = () => {
     const getUserInfo = async () => {
       try {
         const response = await axiosInstance.get("/get-user-info");
-        console.log(response.data.user_data);
+        console.log(response.data.userData);
         setUserInfo({
           name:
-            response.data.user_data.first_name +
+            response.data.userData.firstName +
             " " +
-            response.data.user_data.last_name,
-          email: response.data.user_data.email,
-          contact: response.data.user_data.phone_number,
+            response.data.userData.lastName,
+          email: response.data.userData.email,
+          contact: response.data.userData.phoneNumber,
         });
       } catch (error) {
         console.log(error);
@@ -28,20 +29,21 @@ const RazorPay = () => {
 
   const handlePayment = () => {
     const options = {
-      key: "YOUR_RAZORPAY_KEY",
-      amount: 50000, // Amount in paise
+      key: import.meta.env.VITE_RAZORPAY_KEY,
+      amount: Number(amount).toFixed(0) * 100,
       currency: "INR",
-      name: "Test Company",
-      description: "Test Transaction",
-      order_id: "order_9A33XWu170gUtm", // Generate order_id on server
+      name: "",
+      description: "",
+      order_id: "",
       handler: (response) => {
         console.log(response);
-        alert("Payment Successful!");
+        handlePlaceOrder(isWallet && "completed");
+        setIsOrderPlaced(true);
       },
       prefill: {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        contact: "9999999999",
+        name: userInfo.name,
+        email: userInfo.email,
+        contact: userInfo.contact,
       },
       theme: {
         color: "#F37254",
@@ -53,13 +55,18 @@ const RazorPay = () => {
   };
 
   return (
-    <div>
-      <h1>Payment Page</h1>
-      {isLoading && <p>Loading Razorpay...</p>}
-      {error && <p>Error loading Razorpay: {error}</p>}
-      <button onClick={handlePayment} disabled={isLoading}>
-        Pay Now
-      </button>
+    <div className="mt-3">
+      {isLoading && <p className="text-center">Loading Razorpay...</p>}
+      {error && <p className="text-center">Error loading Razorpay: {error}</p>}
+      {!isLoading && !error && !isOrderPlaced && (
+        <button
+          className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
+          onClick={handlePayment}
+          disabled={isLoading}
+        >
+          Pay Now
+        </button>
+      )}
     </div>
   );
 };
