@@ -30,6 +30,7 @@ export default function CheckoutPage() {
     total: 0,
   });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,9 +41,10 @@ export default function CheckoutPage() {
     }
     const fetchData = async () => {
       try {
-        const [addressResponse, checkoutResponse] = await Promise.all([
+        const [addressResponse, checkoutResponse, walletResponse] = await Promise.all([
           axiosInstance.get("/address"),
           axiosInstance.get("/checkout"),
+          axiosInstance.get("/wallet"),
         ]);
 
         setAddresses(addressResponse.data.addresses);
@@ -60,6 +62,8 @@ export default function CheckoutPage() {
           couponDiscount: summary.couponDiscount,
           total: summary.subtotal,
         });
+
+        setWalletBalance(walletResponse.data.wallet.balance);
       } catch (error) {
         toast.error("Failed to load checkout data");
         console.error(error);
@@ -142,6 +146,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (paymentMethod === "Wallet" && walletBalance < orderSummary.total) {
+      toast.error("Insufficient wallet balance");
+      return;
+    }
+
     try {
       const response = await axiosInstance.post("/checkout-order-success", {
         addressId: selectedAddress,
@@ -153,7 +162,16 @@ export default function CheckoutPage() {
         totalAmount: orderSummary.total,
       });
 
-      console.log(response);
+      if (paymentMethod === "Wallet") {
+        await axiosInstance.post("/wallet", {
+          amount: orderSummary.total,
+          paymentStatus: "completed",
+          type:"debit",
+          products: products.map((item) => ({
+            productName: item.productId.name,
+          })),
+        });
+      }
 
       toast.success("Order placed successfully!");
       setShowSuccessModal(true);
@@ -311,15 +329,15 @@ export default function CheckoutPage() {
                 <input
                   type="radio"
                   name="payment"
-                  value="wallet"
-                  checked={paymentMethod === "wallet"}
+                  value="Wallet"
+                  checked={paymentMethod === "Wallet"}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="mr-4"
                 />
                 <div>
                   <p className="font-medium">Wallet</p>
                   <p className="text-sm text-gray-600">
-                    Available balance: ₹1,500
+                    Available balance: ₹{walletBalance.toLocaleString()}
                   </p>
                 </div>
               </label>
@@ -421,14 +439,14 @@ export default function CheckoutPage() {
               <RazorPay
                 amount={orderSummary.total}
                 handlePlaceOrder={handlePlaceOrder}
-                isWallet={paymentMethod === "wallet"}
+                isWallet={paymentMethod === "Wallet"}
               />
             ) : (
               <button
                 onClick={handlePlaceOrder}
                 className="w-full py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
               >
-                Place Order (Cash on Delivery)
+                Place Order ({paymentMethod === "Wallet" ? "Wallet" : "Cash on Delivery"})
               </button>
             )}
           </div>

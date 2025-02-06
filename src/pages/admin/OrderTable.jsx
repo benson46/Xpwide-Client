@@ -156,7 +156,8 @@ export default function OrdersTable() {
                   {currentOrders.map((order) => (
                     <tr key={order._id} className="border-b">
                       <td className="p-4">{order._id}</td>
-                      <td className="p-4">{order.customerName}</td>
+                      <td className="p-4">{order.customerName}{console.log(order.customerName)}</td>
+                      
                       <td className="p-4">
                         <div className="space-y-4">
                           {order.products.map((product) => (
