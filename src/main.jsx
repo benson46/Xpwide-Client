@@ -11,13 +11,13 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 document.title = import.meta.env.VITE_APP_TITLE;
 createRoot(document.getElementById('root')).render(
   <GoogleOAuthProvider clientId = {import.meta.env.VITE_GOOGLE_CLIENTID}>
-    <StrictMode>
+    {/* <StrictMode> */}
       <BrowserRouter>
         <Provider store={store}>
           <Toaster />
           <App />
         </Provider>
       </BrowserRouter>
-    </StrictMode>
+    {/* </StrictMode> */}
   </GoogleOAuthProvider>
 );

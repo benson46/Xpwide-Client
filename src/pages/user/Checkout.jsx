@@ -1,26 +1,32 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { axiosInstance } from "../../utils/axios";
-import { IndianRupee, Plus } from "lucide-react";
-import toast from "react-hot-toast";
-import { useSelector } from "react-redux";
-import AddressForm from "../../components/user/AddressForm";
-import AddressCard from "../../components/user/AddressCard";
-import OrderSuccessModal from "../../components/user/OrderSuccessMadal";
-import RazorPay from "../../components/user/razorpay-payment/RazorPay";
+"use client"
+
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { axiosInstance } from "../../utils/axios"
+import { IndianRupee, Plus } from "lucide-react"
+import toast from "react-hot-toast"
+import { useSelector } from "react-redux"
+import AddressForm from "../../components/user/AddressForm"
+import AddressCard from "../../components/user/AddressCard"
+import OrderSuccessModal from "../../components/user/OrderSuccessMadal"
+import RazorPay from "../../components/user/razorpay-payment/RazorPay"
 
 export default function CheckoutPage() {
-  const user = useSelector((state) => state.user?.user);
-  const token = localStorage.getItem("accessToken");
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState("");
-  const [showAddAddress, setShowAddAddress] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [editingAddressId, setEditingAddressId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [couponCode, setCouponCode] = useState("");
-  const [products, setProducts] = useState([]);
+  const user = useSelector((state) => state.user?.user)
+  const navigate = useNavigate()
+
+  // State management
+  const [addresses, setAddresses] = useState([])
+  const [selectedAddress, setSelectedAddress] = useState("")
+  const [showAddAddress, setShowAddAddress] = useState(false)
+  const [editingAddress, setEditingAddress] = useState(null)
+  const [editingAddressId, setEditingAddressId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState("COD")
+  const [couponCode, setCouponCode] = useState("")
+  const [products, setProducts] = useState([])
+  const [walletBalance, setWalletBalance] = useState(0)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [orderSummary, setOrderSummary] = useState({
     quantity: 0,
     originalPrice: 0,
@@ -28,131 +34,126 @@ export default function CheckoutPage() {
     deliveryFee: 0,
     couponDiscount: 0,
     total: 0,
-  });
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const navigate = useNavigate();
+  })
 
+  // Fetch initial data
   useEffect(() => {
     if (!user) {
-      toast.error("Please login to continue");
-      navigate("/login");
-      return;
+      toast.error("Please login to continue")
+      navigate("/login")
+      return
     }
+
     const fetchData = async () => {
       try {
         const [addressResponse, checkoutResponse, walletResponse] = await Promise.all([
           axiosInstance.get("/address"),
           axiosInstance.get("/checkout"),
           axiosInstance.get("/wallet"),
-        ]);
+        ])
 
-        setAddresses(addressResponse.data.addresses);
-        if (addressResponse.data.addresses.length > 0) {
-          setSelectedAddress(addressResponse.data.addresses[0]._id);
+        const addressList = addressResponse.data.addresses || []
+        setAddresses(addressList)
+        if (addressList.length > 0) {
+          setSelectedAddress(addressList[0]._id)
         }
 
-        setProducts(checkoutResponse.data.items);
-        const summary = checkoutResponse.data;
+        setProducts(checkoutResponse.data.items || [])
+        const summary = checkoutResponse.data
         setOrderSummary({
-          quantity: summary.quantity,
-          originalPrice: summary.subtotal,
+          quantity: summary.quantity || 0,
+          originalPrice: summary.subtotal || 0,
           discountedPrice: 0,
-          deliveryFee: summary.deliveryFee,
-          couponDiscount: summary.couponDiscount,
-          total: summary.subtotal,
-        });
+          deliveryFee: summary.deliveryFee || 0,
+          couponDiscount: summary.couponDiscount || 0,
+          total: summary.subtotal || 0,
+        })
 
-        setWalletBalance(walletResponse.data.wallet.balance);
+        setWalletBalance(walletResponse.data.wallet?.balance || 0)
       } catch (error) {
-        toast.error("Failed to load checkout data");
-        console.error(error);
+        console.error("Fetch error:", error)
+        toast.error("Failed to load checkout data")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    fetchData();
-  }, [user, navigate]);
-
-  const handleAddressSubmit = async (formData) => {
-    try {
-      if (!editingAddress && addresses.length >= 10) {
-        toast.error("Maximum 10 addresses allowed");
-        return;
-      }
-      if (editingAddress) {
-        // Update existing address
-        const response = await axiosInstance.put(
-          `/address/${editingAddress._id}`,
-          formData,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setAddresses(
-          addresses.map((addr) =>
-            addr._id === editingAddress._id ? response.data.address : addr
-          )
-        );
-        toast.success("Address updated successfully");
-        setEditingAddress(null);
-      } else {
-        // Add new address
-        const response = await axiosInstance.post("/address", formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setAddresses([...addresses, response.data.savedAddress]);
-        setSelectedAddress(response.data.savedAddress._id);
-        toast.success("Address added successfully");
-      }
-      setShowAddAddress(false);
-    } catch (error) {
-      toast.error(
-        editingAddress ? "Failed to update address" : "Failed to add address"
-      );
-      console.error(error);
     }
-  };
 
+    fetchData()
+  }, [user, navigate])
+
+  // Handle address submission
+  const handleAddressSubmit = async (formData, addressId) => {
+    try {
+      const isEditing = Boolean(addressId)
+      const endpoint = isEditing ? `/address/${addressId}` : "/address"
+      const method = isEditing ? "put" : "post"
+
+      await axiosInstance[method](endpoint, formData)
+
+      // Fetch updated address list
+      const addressResponse = await axiosInstance.get("/address")
+      const addressList = addressResponse.data.addresses || []
+      setAddresses(addressList)
+
+      if (!isEditing) {
+        const newAddressId = addressList[addressList.length - 1]._id
+        setSelectedAddress(newAddressId)
+      }
+
+      toast.success(`Address ${isEditing ? "updated" : "added"} successfully`)
+      setEditingAddressId(null)
+      setShowAddAddress(false)
+    } catch (error) {
+      console.error("Address submission error:", error)
+      toast.error(`Failed to ${isEditing ? "update" : "add"} address`)
+    }
+  }
+
+  // Handle address editing
   const handleEditAddress = (address) => {
-    setEditingAddressId(editingAddressId === address._id ? null : address._id);
-  };
+    setEditingAddressId(address._id)
+  }
 
   const handleCancelEdit = () => {
-    setEditingAddressId(null);
-  };
+    setEditingAddressId(null)
+  }
 
+  // Handle coupon application
   const handleApplyCoupon = async () => {
-    if (!couponCode) return;
+    if (!couponCode.trim()) {
+      toast.error("Please enter a coupon code")
+      return
+    }
+
     try {
       const response = await axiosInstance.post("/apply-coupon", {
         couponCode,
-      });
+      })
       setOrderSummary((prev) => ({
         ...prev,
         couponDiscount: response.data.discount,
         total: prev.total - response.data.discount,
-      }));
-      toast.success("Coupon applied successfully");
+      }))
+      toast.success("Coupon applied successfully")
     } catch (error) {
-      toast.error(error.response?.data?.message || "Invalid coupon code");
+      toast.error(error.response?.data?.message || "Invalid coupon code")
     }
-  };
+  }
 
+  // Handle order placement
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
-      toast.error("Please select a delivery address");
-      return;
+      toast.error("Please select a delivery address")
+      return
     }
 
     if (paymentMethod === "Wallet" && walletBalance < orderSummary.total) {
-      toast.error("Insufficient wallet balance");
-      return;
+      toast.error("Insufficient wallet balance")
+      return
     }
 
     try {
-      const response = await axiosInstance.post("/checkout-order-success", {
+      const orderData = {
         addressId: selectedAddress,
         paymentMethod,
         products: products.map((item) => ({
@@ -160,38 +161,33 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         totalAmount: orderSummary.total,
-      });
+      }
+
+      await axiosInstance.post("/checkout-order-success", orderData)
 
       if (paymentMethod === "Wallet") {
         await axiosInstance.post("/wallet", {
           amount: orderSummary.total,
           paymentStatus: "completed",
-          type:"debit",
-          products: products.map((item) => ({
-            productName: item.productId.name,
-          })),
-        });
+          type: "debit",
+          products: products.map((item) => ({ productId: item.productId._id })),
+        })
       }
 
-      toast.success("Order placed successfully!");
-      setShowSuccessModal(true);
+      toast.success("Order placed successfully!")
+      setShowSuccessModal(true)
     } catch (error) {
-      toast.error("Failed to place order");
-      console.error(error);
+      console.error("Order placement error:", error)
+      toast.error("Failed to place order")
     }
-  };
-
-  const handleContinueShopping = () => {
-    setShowSuccessModal(false);
-    navigate("/");
-  };
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
-    );
+    )
   }
 
   return (
@@ -207,7 +203,7 @@ export default function CheckoutPage() {
             {products.map((product) => (
               <div key={product.productId._id} className="flex gap-4 mb-5">
                 <img
-                  src={product.productId?.images[0] || "placeholder.svg"}
+                  src={product.productId?.images[0] || "/placeholder.svg"}
                   alt={product.productId.name}
                   className="w-24 h-24 object-cover rounded-lg"
                 />
@@ -221,13 +217,9 @@ export default function CheckoutPage() {
                   </div>
                   <div className="mt-1">
                     {product.productId.stock === 0 ? (
-                      <span className="text-red-500 font-medium">
-                        Stock Not Available
-                      </span>
+                      <span className="text-red-500 font-medium">Stock Not Available</span>
                     ) : (
-                      <span className="text-green-500">
-                        Quantity: {product.quantity}
-                      </span>
+                      <span className="text-green-500">Quantity: {product.quantity}</span>
                     )}
                   </div>
                 </div>
@@ -239,29 +231,30 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
             <div className="space-y-4">
-              {addresses.map((address) => (
-                <AddressCard
-                  key={address._id}
-                  address={address}
-                  isSelected={selectedAddress === address._id}
-                  onSelect={() => setSelectedAddress(address._id)}
-                  onEdit={handleEditAddress}
-                  isEditing={editingAddressId === address._id}
-                  onCancelEdit={handleCancelEdit}
-                  onSubmit={(formData) => {
-                    handleAddressSubmit({
-                      ...formData,
-                      _id: address._id,
-                    });
-                    setEditingAddressId(null);
-                  }}
-                />
-              ))}
+              {addresses?.length > 0 ? (
+                addresses.map((address) =>
+                  address?._id ? (
+                    <AddressCard
+                      key={address._id}
+                      address={address}
+                      isSelected={selectedAddress === address._id}
+                      onSelect={() => setSelectedAddress(address._id)}
+                      onEdit={handleEditAddress}
+                      isEditing={editingAddressId === address._id}
+                      onCancelEdit={handleCancelEdit}
+                      onSubmit={(formData) => handleAddressSubmit(formData, address._id)}
+                    />
+                  ) : null,
+                )
+              ) : (
+                <p>No addresses available.</p>
+              )}
 
+              {/* Add New Address Button */}
               <button
                 onClick={() => {
-                  setShowAddAddress(!showAddAddress);
-                  setEditingAddress(null);
+                  setShowAddAddress(!showAddAddress)
+                  setEditingAddressId(null)
                 }}
                 className="w-full py-2 px-4 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50"
               >
@@ -269,17 +262,15 @@ export default function CheckoutPage() {
                 {showAddAddress ? "Hide Form" : "Add New Address"}
               </button>
 
-              {showAddAddress && (
+              {/* Add New Address Form */}
+              {showAddAddress && !editingAddressId && (
                 <div className="border rounded-lg p-4 mt-4">
-                  <h3 className="font-medium mb-4">
-                    {editingAddress ? "Edit Address" : "Add New Address"}
-                  </h3>
+                  <h3 className="font-medium mb-4">Add New Address</h3>
                   <AddressForm
-                    address={editingAddress}
                     onSubmit={handleAddressSubmit}
                     onCancel={() => {
-                      setShowAddAddress(false);
-                      setEditingAddress(null);
+                      setShowAddAddress(false)
+                      setEditingAddressId(null)
                     }}
                   />
                 </div>
@@ -291,56 +282,41 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4">Payment Method</h2>
             <div className="space-y-4">
-              <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="COD"
-                  checked={paymentMethod === "COD"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-4"
-                />
-                <div>
-                  <p className="font-medium">Cash on Delivery</p>
-                  <p className="text-sm text-gray-600">
-                    Pay when you receive your order
-                  </p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="Razorpay"
-                  checked={paymentMethod === "Razorpay"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-4"
-                />
-                <div>
-                  <p className="font-medium">Razorpay</p>
-                  <p className="text-sm text-gray-600">
-                    Pay securely with credit/debit card or UPI
-                  </p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="Wallet"
-                  checked={paymentMethod === "Wallet"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mr-4"
-                />
-                <div>
-                  <p className="font-medium">Wallet</p>
-                  <p className="text-sm text-gray-600">
-                    Available balance: ₹{walletBalance.toLocaleString()}
-                  </p>
-                </div>
-              </label>
+              {[
+                {
+                  value: "COD",
+                  label: "Cash on Delivery",
+                  description: "Pay when you receive your order",
+                },
+                {
+                  value: "Razorpay",
+                  label: "Razorpay",
+                  description: "Pay securely with credit/debit card or UPI",
+                },
+                {
+                  value: "Wallet",
+                  label: "Wallet",
+                  description: `Available balance: ₹${walletBalance.toLocaleString()}`,
+                },
+              ].map((method) => (
+                <label
+                  key={method.value}
+                  className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.value}
+                    checked={paymentMethod === method.value}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mr-4"
+                  />
+                  <div>
+                    <p className="font-medium">{method.label}</p>
+                    <p className="text-sm text-gray-600">{method.description}</p>
+                  </div>
+                </label>
+              ))}
             </div>
           </div>
         </div>
@@ -351,36 +327,31 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span>Price ({orderSummary?.quantity} item)</span>
-              {""}
-              {/* Assuming one product for now */}
+              <span>Price ({orderSummary.quantity} item)</span>
               <span className="flex items-center">
                 <IndianRupee className="h-4 w-4" />
-                {orderSummary?.originalPrice?.toLocaleString()}
+                {orderSummary.originalPrice.toLocaleString()}
               </span>
             </div>
 
-            <div className="flex justify-between text-sm">
-              <span>Product Discount</span>
-              <span className="text-green-600 flex items-center">
-                -<IndianRupee className="h-4 w-4" />
-                {/* {(
-                  orderSummary.originalPrice - orderSummary?.discountedPrice
-                ).toLocaleString()} */}
-                {orderSummary.discountedPrice}
-              </span>
-            </div>
+            {orderSummary.discountedPrice > 0 && (
+              <div className="flex justify-between text-sm">
+                <span>Product Discount</span>
+                <span className="text-green-600 flex items-center">
+                  -<IndianRupee className="h-4 w-4" />
+                  {orderSummary.discountedPrice.toLocaleString()}
+                </span>
+              </div>
+            )}
 
             <div className="flex justify-between text-sm">
               <span>Delivery Fee</span>
-              {orderSummary?.deliveryFee === 0 ? (
+              {orderSummary.deliveryFee === 0 ? (
                 <span className="text-green-600">FREE</span>
               ) : (
                 <span className="flex items-center">
                   <IndianRupee className="h-4 w-4" />
-                  {typeof orderSummary?.deliveryFee === "number"
-                    ? orderSummary.deliveryFee.toLocaleString()
-                    : "0"}
+                  {orderSummary.deliveryFee.toLocaleString()}
                 </span>
               )}
             </div>
@@ -395,10 +366,7 @@ export default function CheckoutPage() {
                   placeholder="Enter coupon code"
                   className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
-                <button
-                  onClick={handleApplyCoupon}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
+                <button onClick={handleApplyCoupon} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
                   Apply
                 </button>
               </div>
@@ -417,30 +385,21 @@ export default function CheckoutPage() {
               <span>Total Amount</span>
               <span className="flex items-center">
                 <IndianRupee className="h-4 w-4" />
-                {typeof orderSummary?.total === "number"
-                  ? orderSummary.total.toLocaleString()
-                  : "0"}
+                {orderSummary.total.toLocaleString()}
               </span>
             </div>
 
             {orderSummary.originalPrice - orderSummary.total > 0 && (
               <div className="text-green-600 text-sm text-right">
                 You will save <IndianRupee className="h-3 w-3 inline" />
-                {(
-                  orderSummary.originalPrice - orderSummary.total
-                ).toLocaleString()}{" "}
-                on this order
+                {(orderSummary.originalPrice - orderSummary.total).toLocaleString()} on this order
               </div>
             )}
           </div>
 
           <div className="mt-6">
             {paymentMethod === "Razorpay" ? (
-              <RazorPay
-                amount={orderSummary.total}
-                handlePlaceOrder={handlePlaceOrder}
-                isWallet={paymentMethod === "Wallet"}
-              />
+              <RazorPay amount={orderSummary.total} handlePlaceOrder={handlePlaceOrder} isWallet={false} />
             ) : (
               <button
                 onClick={handlePlaceOrder}
@@ -452,11 +411,16 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
       <OrderSuccessModal
         isOpen={showSuccessModal}
         amount={orderSummary.total}
-        onClose={handleContinueShopping}
+        onClose={() => {
+          setShowSuccessModal(false)
+          navigate("/")
+        }}
       />
     </div>
-  );
+  )
 }
+
