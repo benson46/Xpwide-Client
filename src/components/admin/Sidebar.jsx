@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import PropTypes from "prop-types"; 
 import {
   LayoutGrid,
@@ -23,15 +23,15 @@ export const menuItems = [
   { name: "Brands", icon: Tag, path: "/brands" },
   { name: "Coupons", icon: Ticket, path: "/coupons" },
   { name: "Banners", icon: ImageIcon, path: "/banners" },
-  { name: "Payments", icon: Wallet, path: "/payments" },
   { name: "Offers", icon: Percent, path: "/offers" },
 ];
 
-export default function Sidebar({ activePage }) {
+const Sidebar = ({ activePage }) => {
   const navigate = useNavigate();
   const handleClick = (path) => {
     navigate(`/admin${path}`);
   };
+
   return (
     <aside className="w-64 min-h-[calc(100vh-73px)] bg-black border-r border-gray-800">
       <nav className="p-4">
@@ -59,8 +59,11 @@ export default function Sidebar({ activePage }) {
       </nav>
     </aside>
   );
-}
+};
+
+// Wrap in React.memo
+export default memo(Sidebar);
 
 Sidebar.propTypes = {
-  activePage: PropTypes.string.isRequired, // Expecting a string for activePage
+  activePage: PropTypes.string.isRequired
 };

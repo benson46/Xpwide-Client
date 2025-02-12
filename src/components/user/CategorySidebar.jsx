@@ -13,7 +13,9 @@ export default function CategorySidebar({ currentCategory }) {
     const fetchCategories = async () => {
       try {
         const response = await axiosInstance.get("/category");
-        setCategories(response.data.categories);
+        let categoryData = response.data.categories;
+        categoryData = categoryData.filter(category => !category.isBlocked);
+        setCategories(categoryData);
       } catch (error) {
         console.error("Error fetching categories", error);
       }

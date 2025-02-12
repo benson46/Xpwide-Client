@@ -9,7 +9,6 @@ import ProductDetails from "../pages/user/ProductDetials";
 import { UserAuth, UserRequireAuth } from "../components/private/userProtectedRoute";
 import ShopPage from "../pages/user/ShopPage";
 import Orders from "../pages/user/Orders";
-import OrderDetails from "../pages/user/OrderDetials";
 import Navbar from "../components/user/Navbar";
 import Cart from "../pages/user/Cart";
 import Profile from "../pages/user/Profile";
@@ -43,7 +42,6 @@ function UserRoutes() {
         <Route path="change-password-email" element={<UserRequireAuth><ForgotPasswordEmail /></UserRequireAuth>} />
         <Route path="change-password" element={<UserRequireAuth><ResetPassword /></UserRequireAuth>} />
 
-        {/* Protected Routes (Requires Authentication) */}
         <Route index element={<Homepage />} />
         <Route path="shop/:categoryTitle" element={<ShopPage />} />
         <Route path="product/:productId" element={<ProductDetails />} />
@@ -54,7 +52,6 @@ function UserRoutes() {
         <Route path="profile" element={<UserAuth><Profile /></UserAuth>} />
         <Route path="address" element={<UserAuth><ManageAddress /></UserAuth>} />
         <Route path="orders" element={<UserAuth><Orders /></UserAuth>} />
-        <Route path="order-detials" element={<UserAuth><OrderDetails /></UserAuth>} />
         <Route path="wallet" element={<UserAuth><Wallet /></UserAuth>} />
         <Route path="wishlist" element={<UserAuth><Wishlist /></UserAuth>} />
 

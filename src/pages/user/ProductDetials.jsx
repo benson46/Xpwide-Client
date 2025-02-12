@@ -8,7 +8,20 @@ import { ImageModal } from "../../components/user/ImageModal";
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [count, setCount] = useState(0);
-  const [product, setProduct] = useState({});
+  const [product, setProduct] = useState({
+    pricing: {
+      discountedPrice: 0,
+      originalPrice: 0,
+      hasOffer: false,
+      offer: null,
+    },
+    price: 0, // Add a default price
+    stock: 0, // Add a default stock
+    images: [], // Add a default images array
+    name: "", // Add a default name
+    brand: {}, // Add a default brand object
+    category: {}, // Add a default category object
+  });
   const [isZoomed, setIsZoomed] = useState(false);
   const navigate = useNavigate();
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
@@ -53,7 +66,9 @@ export default function ProductDetails() {
             brandId: response.data.product.brand?._id,
             productId,
           },
+          
         });
+        console.log("Fetched Product:", relatedProducts.data.products); // Debugging
         setRelatedProducts(relatedProducts.data.products);
         checkWishlistStatus(response.data.product._id);
       }
@@ -212,10 +227,26 @@ export default function ProductDetails() {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-3xl font-bold flex items-center">
-                <IndianRupee /> {product.price}
-              </p>
-              <p className="text-sm text-gray-500">{product.description}</p>
+              {product?.hasOffer ? (
+                <div className="flex items-center gap-4">
+                  <p className="text-3xl font-bold flex items-center text-green-600">
+                    <IndianRupee />{" "}
+                    {product?.discountedPrice?.toFixed(2) || "0.00"}
+                  </p>
+                  <p className="text-xl line-through text-gray-500 flex items-center">
+                    <IndianRupee /> {product.price?.toFixed(2) || "0.00"}
+                  </p>
+                  {product?.offer && (
+                    <span className="bg-red-500 text-white px-2 py-1 rounded text-sm">
+                      {product?.offer.value}% OFF
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-3xl font-bold flex items-center">
+                  <IndianRupee /> {product.price?.toFixed(2) || "0.00"}
+                </p>
+              )}
             </div>
             <div className="flex flex-col w-full items-start gap-4">
               {product.stock > 0 ? (
@@ -307,41 +338,61 @@ export default function ProductDetails() {
         </div>
 
         {/* Related Products */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">Related Products</h2>
-          {relatedProducts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <div
-                  key={relatedProduct._id}
-                  className="border rounded overflow-hidden"
-                >
-                  <div className="aspect-[4/3] relative">
-                    <img
-                      src={relatedProduct.images[0] || "/placeholder.svg"}
-                      alt={relatedProduct.name}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold">{relatedProduct.name}</h3>
-                    <p className="texsdt-lg font-bold mt-2">
-                      {relatedProduct.price}
-                    </p>
-                    <button
-                      className="w-full bg-blue-500 text-white p-2 mt-4 rounded"
-                      onClick={() => navigate(`/product/${relatedProduct._id}`)}
-                    >
-                      Buy Now
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No related products found.</p>
-          )}
+<div className="mt-12">
+  <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+  {relatedProducts.length > 0 ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {relatedProducts.map((relatedProduct) => (
+        <div
+          key={relatedProduct._id}
+          className="border rounded overflow-hidden"
+        >
+          <div className="aspect-[4/3] relative">
+            <img
+              src={relatedProduct.images[0] || "/placeholder.svg"}
+              alt={relatedProduct.name}
+              className="object-cover w-full h-full"
+            />
+          </div>
+          <div className="p-4">
+            <h3 className="font-semibold">{relatedProduct.name}</h3>
+
+            {/* Pricing Section */}
+            {relatedProduct.hasOffer ? (
+              <div className="flex items-center gap-4">
+                <p className="text-lg font-bold text-green-600 flex items-center">
+                  <IndianRupee /> {relatedProduct.discountedPrice.toFixed(2)}
+                </p>
+                <p className="text-sm line-through text-gray-500 flex items-center">
+                  <IndianRupee /> {relatedProduct.price.toFixed(2)}
+                </p>
+                {relatedProduct.offer && (
+                  <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
+                    {relatedProduct.offer.value}% OFF
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-lg font-bold flex items-center">
+                <IndianRupee /> {relatedProduct.price.toFixed(2)}
+              </p>
+            )}
+
+            <button
+              className="w-full bg-blue-500 text-white p-2 mt-4 rounded"
+              onClick={() => navigate(`/product/${relatedProduct._id}`)}
+            >
+              View Product
+            </button>
+          </div>
         </div>
+      ))}
+    </div>
+  ) : (
+    <p className="text-gray-500">No related products found.</p>
+  )}
+</div>
+
         {isModalOpen && product?.images && (
           <ImageModal
             src={product.images[count] || "/placeholder.svg"}

@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Minus, Plus } from "lucide-react";
 import { axiosInstance } from "../../utils/axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,18 +21,26 @@ export default function Cart() {
         });
 
         const cartProducts = response.data.items;
+        console.log("Cart Items:", response.data.items);
         if (cartProducts && cartProducts.length > 0) {
           setProducts(
-            cartProducts.map((product) => ({
-              id: product.productId._id,
-              name: product.productId.name,
-              category: product.productId.category,
-              manufacturer: product.productId.manufacturer,
-              price: product.productId.price,
-              quantity: product.quantity,
-              stock: product.productId.stock,
-              image: product.productId.images[0],
-            }))
+            cartProducts.map((item) => {
+              const prod = item.productId;
+              return {
+                id: prod._id,
+                name: prod.name,
+                category: prod.category, // adjust if you need a title or similar
+                manufacturer: prod.manufacturer, // adjust as needed
+                // Use discountedPrice if an offer exists, otherwise the original price
+                price: prod.hasOffer ? prod.discountedPrice : prod.price,
+                originalPrice: prod.price,
+                hasOffer: prod.hasOffer,
+                offer: prod.offer,
+                quantity: item.quantity,
+                stock: prod.stock,
+                image: prod.images[0],
+              };
+            })
           );
           setSubtotal(response.data.subtotal);
         } else {
@@ -51,14 +58,11 @@ export default function Cart() {
   }, []);
 
   const updateQuantity = async (id, change) => {
-    setProducts((products) => {
-      const updatedProducts = products.map((product) => {
+    setProducts((prevProducts) => {
+      const updatedProducts = prevProducts.map((product) => {
         if (product.id === id) {
           const newQuantity = product.quantity + change;
-          // Allow decreasing the quantity even if stock is 0
           if (newQuantity < 1) return product;
-          console.log("hee");
-          // Prevent increasing the quantity beyond stock or limit (e.g., 5)
           if (newQuantity > product.stock || newQuantity > 5) return product;
           return { ...product, quantity: newQuantity };
         }
@@ -99,8 +103,10 @@ export default function Cart() {
   };
 
   const removeProduct = async (id) => {
-    setProducts((products) => {
-      const updatedProducts = products.filter((product) => product.id !== id);
+    setProducts((prevProducts) => {
+      const updatedProducts = prevProducts.filter(
+        (product) => product.id !== id
+      );
       if (updatedProducts.length === 0) setSubtotal(0);
       return updatedProducts;
     });
@@ -143,9 +149,8 @@ export default function Cart() {
         <div className="text-center p-10 bg-white shadow-sm rounded-lg">
           <h2 className="text-2xl font-semibold">Your Cart is Empty</h2>
           <p className="text-gray-600 mt-2">
-            Looks like you haven&#39;t added anything to your cart yet.
+            Looks like you haven't added anything to your cart yet.
           </p>
-
           <button
             onClick={() => navigate("/shop/all")}
             className="mt-4 px-6 py-2 bg-blue-800 text-white rounded hover:bg-blue-900 transition-colors"
@@ -184,10 +189,25 @@ export default function Cart() {
                           {product.manufacturer}
                         </p>
                       </div>
-                      <p className="font-medium">₹{product.price}</p>
+                      <div>
+                        {product.hasOffer ? (
+                          <div className="flex flex-col items-end">
+                            <p className="font-medium text-green-600">
+                              ₹{product.price.toFixed(2)}
+                            </p>
+                            <p className="text-sm line-through text-gray-500">
+                              ₹{product.originalPrice.toFixed(2)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="font-medium">
+                            ₹{product.price.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex items-center">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(product.id, -1)}
@@ -212,7 +232,7 @@ export default function Cart() {
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ml-4">
                         <span
                           className={
                             product.stock === 0 ||
@@ -233,6 +253,11 @@ export default function Cart() {
                           REMOVE
                         </button>
                       </div>
+
+                      {/* Per item total price displayed on the right */}
+                      <div className="ml-auto font-bold">
+                        ₹{(product.price * product.quantity).toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -244,16 +269,14 @@ export default function Cart() {
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-medium">SUBTOTAL</span>
-                <span className="font-medium">₹{subtotal}</span>
+                <span className="font-medium">₹{subtotal.toFixed(2)}</span>
               </div>
               <button
                 disabled={
                   products.some(
                     (product) =>
                       product.stock === 0 || product.quantity > product.stock
-                  ) ||
-                  products.length === 0 ||
-                  products.quantity <= 1
+                  ) || products.length === 0
                 }
                 className={`w-full py-2 rounded transition-colors ${
                   products.length === 0 ||

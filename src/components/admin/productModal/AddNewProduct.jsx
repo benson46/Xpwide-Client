@@ -76,8 +76,9 @@ export default function AddNewProduct({
           setImages([...images, data.secure_url]);
           setSelectedImage(null);
         } else {
+          toast.error('Failed to upload image to Cloudinary')
           console.error(
-            "Failed to upload image to Cloudinary",
+            "Image upload to Cloudinary Error",
             data.error.message
           );
         }

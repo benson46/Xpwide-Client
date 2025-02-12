@@ -6,12 +6,13 @@ import { Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function EditProductModal({
-  products,
+  product,
   categories,
   brands,
   onClose,
   onUpdate,
-}) {
+})
+{
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -27,26 +28,24 @@ export default function EditProductModal({
   const [previewImage, setPreviewImage] = useState(null); // For full-screen preview
   const cropperRef = useRef(null);
   const [loading, setLoading] = useState(true);
-
-
+  
   
   useEffect(() => {
-    if (products) {
-      console.log(products)
+    if (product) {
       setFormData({
-        id: products._id,
-        name: products.name,
-        category: products.category._id,
-        brand: products.brand._id,
-        price: products.price,
-        stock: products.stock,
-        description: products.description,
+        id: product._id,
+        name: product.name,
+        category: product.category._id,
+        brand: product.brand._id,
+        price: product.price,
+        stock: product.stock,
+        description: product.description,
       });
 
-      setImages(products.images || []);
+      setImages(product.images || []);
     }
     setLoading(false)
-  }, [products]);
+  }, [product]);
 
   const validateForm = () => {
     const errors = {};
@@ -109,6 +108,7 @@ export default function EditProductModal({
     );
   }
   return (
+    
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Form Fields */}
       <div className="space-y-2">

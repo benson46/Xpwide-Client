@@ -1,3 +1,4 @@
+// components/ProductGrid.js
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { axiosInstance } from "../../utils/axios";
@@ -14,6 +15,7 @@ const ProductGrid = () => {
       try {
         const response = await axiosInstance.get("/featured-products");
         setProducts(response.data.products);
+        console.log('Featured Products:', response.data.products)
       } catch (error) {
         toast.error("Failed to fetch products:", error);
       } finally {
@@ -31,7 +33,7 @@ const ProductGrid = () => {
   return (
     <div className="px-4 py-8">
       <h2 className="text-xl font-bold mb-6 text-center">HOT GAMES</h2>
-
+    {console.log(products)}
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
