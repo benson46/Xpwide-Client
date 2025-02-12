@@ -74,11 +74,11 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("user");
       window.location.href = "/login";
     } else {
-      // Handle other errors with a toast
-      toast.error(error.response?.data?.message|| "An unexpected error occurred")
+      if(error.response.data.message){
+        toast.error(error.response?.data?.message )
+      }
     }
-
-    return Promise.reject(error); // Reject the response on error
+    return Promise.reject(error);
   }
 );
 

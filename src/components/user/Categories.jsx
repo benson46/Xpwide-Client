@@ -12,9 +12,11 @@ export default function Categories() {
     const fetchCategories = async () => {
       try {
         const response = await axiosInstance.get("/category");
-        const categoryData = response.data.categories;
+        let categoryData = response.data.categories;
+        categoryData = categoryData.filter(category => !category.isBlocked);
+  
         setCategories([{ _id: "0001", title: "All Products", icon: "🌟" }, ...categoryData]);
-      } catch (error) {
+      }  catch (error) {
         toast.error(`Failed to fetch categories: ${error}`);
         console.error(error);
       } finally {

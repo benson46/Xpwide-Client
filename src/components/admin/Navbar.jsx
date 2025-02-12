@@ -1,16 +1,17 @@
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import {  logoutAdmin } from "../../store/adminSlice"; // Import the logout action
+import { logoutAdmin } from "../../store/adminSlice"; 
 import { Search, User, LogOut } from "lucide-react";
 import { adminAxiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-export default function Navbar() {
-  const dispatch = useDispatch(); // Dispatch function from Redux
+const Navbar = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  // Memoizing handleLogout function to prevent re-renders
+  const handleLogout = useCallback(async () => {
     try {
       const response = await adminAxiosInstance.post("/logout");
       if (response) {
@@ -21,21 +22,12 @@ export default function Navbar() {
       }
     } catch (error) {
       toast.error("Logout Failed");
-      console.log(error)
+      console.error(`Logout Error : ${error}`);
     }
-  };
+  }, [dispatch, navigate]);
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-      <div className="flex items-center">
-        {/* Logo */}
-        {/* <img 
-          src="/placeholder.svg" 
-          alt="XPWide Logo" 
-          className="h-8 w-auto"
-        /> */}
-      </div>
-
       <div className="flex-1 max-w-xl mx-4">
         <div className="relative">
           <input
@@ -52,13 +44,13 @@ export default function Navbar() {
           <User className="h-5 w-5" />
           <span>Admin</span>
         </div>
-        <button
-          className="text-yellow-500 hover:text-yellow-400"
-          onClick={handleLogout}
-        >
+        <button className="text-yellow-500 hover:text-yellow-400" onClick={handleLogout}>
           <LogOut className="h-5 w-5" />
         </button>
       </div>
     </nav>
   );
-}
+};
+
+// Wrap in React.memo
+export default memo(Navbar);

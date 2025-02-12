@@ -2,6 +2,7 @@ import React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { googleAuth } from "../services/api";
 import PropTypes from "prop-types"; // Import PropTypes
+import toast from "react-hot-toast";
 
 const GoogleLogin = (props) => {
   const responseGoogle = async (authResult) => {
@@ -10,7 +11,7 @@ const GoogleLogin = (props) => {
         console.log(authResult.code);
         const result = await googleAuth(authResult.code);
         props.setUser(result.data.data.user);
-        alert("Successfully logged in");
+        toast.success("Successfully logged in");
       } else {
         console.log(authResult);
         throw new Error(authResult);
