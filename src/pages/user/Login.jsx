@@ -52,7 +52,6 @@ export default function Login() {
       toast.success("Login successful!");
     } catch (error) {
       toast.error(error.response.data.message);
-      console.log(error.response.data);
     }
   };
 

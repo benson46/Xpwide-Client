@@ -6,12 +6,7 @@ import "cropperjs/dist/cropper.css";
 import { Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 
-export default function AddNewProduct({
-  onClose,
-  categories,
-  brands,
-  onSubmit,
-}) {
+export default function AddNewProduct({ onClose, categories, brands, onSubmit }) {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -53,10 +48,7 @@ export default function AddNewProduct({
 
   const handleCrop = async () => {
     if (cropperRef.current) {
-      const croppedData = cropperRef.current.cropper
-        .getCroppedCanvas()
-        .toDataURL();
-
+      const croppedData = cropperRef.current.cropper.getCroppedCanvas().toDataURL();
       try {
         const formData = new FormData();
         formData.append("file", croppedData);
@@ -76,14 +68,11 @@ export default function AddNewProduct({
           setImages([...images, data.secure_url]);
           setSelectedImage(null);
         } else {
-          toast.error('Failed to upload image to Cloudinary')
-          console.error(
-            "Image upload to Cloudinary Error",
-            data.error.message
-          );
+          toast.error('Failed to upload image to Cloudinary');
+          console.error("Image upload Error:", data.error.message);
         }
       } catch (error) {
-        console.error("An error occurred while uploading to Cloudinary", error);
+        console.error("Error uploading to Cloudinary:", error);
       }
     }
   };
@@ -116,7 +105,8 @@ export default function AddNewProduct({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4">
+      {/* Product Name */}
       <div className="space-y-2 text-white">
         <label className="block text-sm font-medium text-gray-400">
           Product Name
@@ -125,29 +115,27 @@ export default function AddNewProduct({
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+          className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
             formErrors.name
               ? "border-red-500 text-black"
               : "border-gray-800 bg-gray-800 focus:border-yellow-500"
           }`}
           placeholder="Enter product name"
         />
-        {formErrors.name && (
-          <p className="text-red-500 text-sm">{formErrors.name}</p>
-        )}
+        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Category & Brand */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Category */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-400">
             Category
           </label>
           <select
             value={formData.category}
-            onChange={(e) =>
-              setFormData({ ...formData, category: e.target.value })
-            }
-            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
               formErrors.category
                 ? "border-red-500 text-black"
                 : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
@@ -162,24 +150,21 @@ export default function AddNewProduct({
                 </option>
               ))}
           </select>
-          {formErrors.category && (
-            <p className="text-red-500 text-sm">{formErrors.category}</p>
-          )}
+          {formErrors.category && <p className="text-red-500 text-sm">{formErrors.category}</p>}
         </div>
 
+        {/* Brand */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-400">
             Brand
           </label>
           <select
             value={formData.brand}
-            onChange={(e) =>
-              setFormData({ ...formData, brand: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
             className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
               formErrors.brand
                 ? "border-red-500 text-black"
-                : " text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
+                : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
           >
             <option value="">Select brand</option>
@@ -191,34 +176,31 @@ export default function AddNewProduct({
                 </option>
               ))}
           </select>
-          {formErrors.brand && (
-            <p className="text-red-500 text-sm">{formErrors.brand}</p>
-          )}
+          {formErrors.brand && <p className="text-red-500 text-sm">{formErrors.brand}</p>}
         </div>
       </div>
 
+      {/* Description */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-600">
+        <label className="block text-sm font-medium text-gray-400">
           Description
         </label>
         <textarea
           value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
             formErrors.description
               ? "border-red-500 text-black"
               : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
           }`}
           placeholder="Enter product description"
         />
-        {formErrors.description && (
-          <p className="text-red-500 text-sm">{formErrors.description}</p>
-        )}
+        {formErrors.description && <p className="text-red-500 text-sm">{formErrors.description}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Price & Stock */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Price */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-400">
             Price
@@ -226,21 +208,17 @@ export default function AddNewProduct({
           <input
             type="number"
             value={formData.price}
-            onChange={(e) =>
-              setFormData({ ...formData, price: e.target.value })
-            }
-            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
               formErrors.price
                 ? "border-red-500 text-black"
                 : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
             placeholder="Enter price"
           />
-          {formErrors.price && (
-            <p className="text-red-500 text-sm">{formErrors.price}</p>
-          )}
+          {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
         </div>
-
+        {/* Stock */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-400">
             Stock
@@ -248,29 +226,26 @@ export default function AddNewProduct({
           <input
             type="number"
             value={formData.stock}
-            onChange={(e) =>
-              setFormData({ ...formData, stock: e.target.value })
-            }
-            className={`w-full rounded-lg border px-3 py-2 text-sm  placeholder-gray-600 focus:outline-none ${
+            onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+            className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
               formErrors.stock
                 ? "border-red-500 text-black"
                 : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
             }`}
             placeholder="Enter stock"
           />
-          {formErrors.stock && (
-            <p className="text-red-500 text-sm">{formErrors.stock}</p>
-          )}
+          {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
         </div>
       </div>
 
+      {/* Image Upload */}
       <div className="space-y-4">
         <label className="block text-sm font-medium text-gray-400">
           Product Images
         </label>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 overflow-x-auto">
           {images.map((image, index) => (
-            <div key={index} className="relative">
+            <div key={index} className="relative flex-shrink-0">
               <img
                 src={image}
                 alt={`Cropped ${index}`}
@@ -288,7 +263,7 @@ export default function AddNewProduct({
           ))}
 
           {images.length < 3 && (
-            <div className="flex items-center justify-center h-32 w-32 border-2 border-dashed rounded-lg bg-gray-800">
+            <div className="flex items-center justify-center h-32 w-32 border-2 border-dashed rounded-lg bg-gray-800 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => document.getElementById("fileInput").click()}
@@ -330,6 +305,7 @@ export default function AddNewProduct({
         </div>
       </div>
 
+      {/* Form Actions */}
       <div className="flex justify-end gap-3">
         <button
           type="button"
@@ -361,7 +337,6 @@ export default function AddNewProduct({
     </form>
   );
 }
-
 
 AddNewProduct.propTypes = {
   onClose: PropTypes.func.isRequired,

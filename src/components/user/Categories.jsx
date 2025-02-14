@@ -28,8 +28,6 @@ export default function Categories() {
   }, []);
 
   const handleCategoryClick = (category) => {
-    console.log(category)
-    // Navigate to the dynamic route `/shop/:categoryTitle`
     navigate(`/shop/${category.title === "All Products" ? "all" : category.title}`);
   };
 

@@ -7,7 +7,8 @@ import AddCategoryModal from "../../components/admin/categoryModal/AddCategoryMo
 import EditCategoryModal from "../../components/admin/categoryModal/EditCategoryModal";
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
-import Pagination from "../../components/Pagination";
+import Table from "../../components/ui/admin/Table";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 export default function Categories() {
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -18,25 +19,33 @@ export default function Categories() {
   const [totalCategories, setTotalCategories] = useState(0);
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Confirmation modal state for toggling status
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+  });
 
   const fetchCategory = async () => {
     try {
       const response = await adminAxiosInstance.get("/category");
       setCategories(response.data.categories || []);
-      setTotalCategories(
-        response.data.totalCategories || response.data.categories.length
-      ); // Fix here
-      setLoading(false);
+      setTotalCategories(response.data.totalCategories);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch categories.");
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchCategory();
-  }, []);
+  }, [currentPage]);
 
   const handleAddCategory = async (formData) => {
     try {
@@ -55,146 +64,165 @@ export default function Categories() {
       fetchCategory();
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Error adding category.");
+      toast.error(
+        error.response?.data?.message || "Error adding category."
+      );
     }
   };
 
   const handleEditCategory = async (updatedCategory) => {
     try {
-      const isCategoryExist = categories.some((category) => {
-        if (
-          category.title.toLowerCase() === updatedCategory.title.toLowerCase()
-        ) {
-          return true;
-        }
-        return false;
-      });
+      const isCategoryExist = categories.some(
+        (category) =>
+          category.title.toLowerCase() === updatedCategory.title.toLowerCase() &&
+          category._id !== updatedCategory._id
+      );
 
       if (isCategoryExist) {
         toast.error("Category should be unique");
         return;
       }
 
-      await adminAxiosInstance.put(
+      const res = await adminAxiosInstance.put(
         `/category/${updatedCategory._id}`,
         updatedCategory
       );
-      fetchCategory();
-      toast.success("Category updated successfully!");
+
+      if (res.data.success) {
+        setCategories((prevCategories) =>
+          prevCategories.map((category) =>
+            category._id === updatedCategory._id ? updatedCategory : category
+          )
+        );
+        toast.success("Category updated successfully!");
+        setIsEditCategoryModalOpen(false);
+      } else {
+        toast.error(res.data.message || "Error updating category.");
+      }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Error updating category.");
+      toast.error(
+        error.response?.data?.message || "Error updating category."
+      );
     }
   };
 
+  // Original toggleStatus for categories
   const toggleStatus = async (id) => {
     try {
-      await adminAxiosInstance.patch("/category", { categoryId: id });
-      fetchCategory();
-      toast.success("Status updated successfully!");
+      const res = await adminAxiosInstance.patch("/category", {
+        categoryId: id,
+      });
+      if (res.data.success) {
+        setCategories((prevCategories) =>
+          prevCategories.map((category) =>
+            category._id === id
+              ? { ...category, isBlocked: !category.isBlocked }
+              : category
+          )
+        );
+        toast.success("Status updated successfully!");
+      } else {
+        toast.error(
+          res.data.message || "Failed to update category status."
+        );
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to update category status.");
     }
   };
 
-  const totalPages = Math.ceil(categories.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCategory = categories.slice(indexOfFirstItem, indexOfLastItem);
+  // Wrap toggleStatus with confirmation
+  const handleToggleStatus = (category) => {
+    setConfirmModal({
+      isOpen: true,
+      title: category.isBlocked ? "List Category" : "Unlist Category",
+      message: `Are you sure you want to ${
+        category.isBlocked ? "list" : "unlist"
+      } the category "${category.title}"?`,
+      onConfirm: async () => {
+        await toggleStatus(category._id);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () =>
+        setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+    });
+  };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
+  const tableHeaders = [
+    { key: "category", label: "CATEGORY" },
+    { key: "icon", label: "ICON" },
+    { key: "action", label: "ACTION" },
+  ];
+
+  const renderUserRow = (category) => (
+    <tr key={category._id} className="border-b border-gray-800">
+      <td className="py-3 px-4">{category.title}</td>
+      <td className="py-3 px-4 text-center">{category.icon}</td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          <button
+            className={`px-4 py-1 rounded-md text-sm font-medium ${
+              category.isBlocked
+                ? "bg-green-500 hover:bg-green-600"
+                : "bg-red-500 hover:bg-red-600"
+            }`}
+            onClick={() => handleToggleStatus(category)}
+          >
+            {category.isBlocked ? "List" : "Unlist"}
+          </button>
+          <button
+            className="p-1 hover:bg-gray-800 rounded"
+            onClick={() => {
+              setSelectedCategory(category);
+              setIsEditCategoryModalOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar />
+    <div className="min-h-screen w-screen overflow-x-auto bg-black text-white">
+      <Navbar toggleSidebar={toggleSidebar} />
 
-      <div className="flex">
-        <Sidebar activePage="Categories" />
-
-        <main className="flex-1 p-6 ">
-          <div className="mb-12 ">
-            <div className="flex justify-between items-center mb-6 ">
-              <h1 className="text-2xl font-semibold">CATEGORIES</h1>
-              <button
-                onClick={() => setIsAddCategoryModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                Add Category
-              </button>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-gray-800 bg-gray-900">
-              {loading ? (
-                <div className="flex justify-center items-center h-40">
-                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left border-b border-gray-800">
-                      <th className="text-left py-3 px-4">CATEGORY</th>
-                      <th className="py-3 px-4 text-center">ICON</th>
-                      <th className="py-3 px-4">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.length > 0 ? (
-                      categories.map((category) => (
-                        <tr
-                          key={category._id}
-                          className="border-b border-gray-800"
-                        >
-                          <td className="py-3 px-4">{category.title}</td>
-                          <td className="py-3 px-4 text-center">
-                            {category.icon}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                className={`px-4 py-1 rounded-md text-sm font-medium ${
-                                  category.isBlocked
-                                    ? "bg-green-500 hover:bg-green-600"
-                                    : "bg-red-500 hover:bg-red-600"
-                                }`}
-                                onClick={() => toggleStatus(category._id)}
-                              >
-                                {category.isBlocked ? "List" : "Unlist"}
-                              </button>
-                              <button
-                                className="p-1 hover:bg-gray-800 rounded"
-                                onClick={() => {
-                                  setSelectedCategory(category);
-                                  setIsEditCategoryModalOpen(true);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="text-center py-4">
-                          No categories available.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <Pagination
+      <div className="flex flex-row">
+        <div className="sm:block">
+          <Sidebar activePage="Categories" isCollapsed={isCollapsed} />
+        </div>
+        <main className="flex-1 p-4 sm:p-6">
+          <div className="sm:flex-row justify-between mb-6">
+            <h1 className="text-xl sm:text-2xl font-semibold">CATEGORIES</h1>
+            <button
+              onClick={() => setIsAddCategoryModalOpen(true)}
+              className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Add Category</span>
+            </button>
+          </div>
+          {/* Wrap table in an overflow container */}
+          <div className="w-full overflow-x-auto">
+            <Table
+              headers={tableHeaders}
+              rows={categories}
+              loading={loading}
               currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
               itemsPerPage={itemsPerPage}
-              totalItems={categories.length}
+              totalItems={totalCategories}
+              onPageChange={handlePageChange}
+              renderRow={(category) => renderUserRow(category)}
             />
           </div>
         </main>
@@ -212,6 +240,16 @@ export default function Categories() {
         category={selectedCategory}
         onUpdate={handleEditCategory}
       />
+
+      {confirmModal.isOpen && (
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={confirmModal.onCancel}
+        />
+      )}
     </div>
   );
 }

@@ -95,7 +95,6 @@ export default function EditProductModal({
       return;
     }
     const updatedProduct = { ...formData, images };
-    console.log(updatedProduct)
     onUpdate(updatedProduct);
     onClose();
   };

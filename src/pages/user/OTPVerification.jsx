@@ -42,7 +42,6 @@ export default function OTPVerification() {
       toast.success("OTP resent successfully");
     } catch (error) {
       toast.error("Failed to resend OTP");
-      console.log(error)
     }
   };
 
@@ -56,7 +55,6 @@ export default function OTPVerification() {
 
     try {
       if (location.state?.from === "forgot-password") {
-        console.log(data)
         await axiosInstance.post("/verify-otp", data);
         navigate("/change-password", { state: { email: data.email } });
       } else if (location.state?.from === "signup") {

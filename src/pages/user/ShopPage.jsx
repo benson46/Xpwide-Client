@@ -1,5 +1,4 @@
-import React from 'react';
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CategorySidebar from "../../components/user/CategorySidebar";
 import toast from "react-hot-toast";
@@ -10,7 +9,6 @@ export default function ShopPage() {
   const [sortBy, setSortBy] = useState("featured");
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const navigate = useNavigate();
   const { categoryTitle } = useParams();
 
@@ -23,7 +21,6 @@ export default function ShopPage() {
         }`;
         const response = await axiosInstance.get(endpoint);
         setProducts(response.data.products);
-        setFilteredProducts(response.data.products);
       } catch (error) {
         toast.error(
           error.response?.data?.message || "Failed to fetch products"
@@ -36,33 +33,28 @@ export default function ShopPage() {
     fetchProducts();
   }, [categoryTitle]);
 
-  // Sort products when sortBy changes
-  useEffect(() => {
-    const sortProducts = () => {
-      const sorted = [...products].sort((a, b) => {
-        switch (sortBy) {
-          case "featured":
-            return a.isFeatured ? -1 : 1;
-          case "price-low":
-            return a.price - b.price;
-          case "price-high":
-            return b.price - a.price;
-          case "rating":
-            return b.rating - a.rating;
-          case "newest":
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          case "a-z":
-            return (a.name || "").localeCompare(b.name || "");
-          case "z-a":
-            return (b.name || "").localeCompare(a.name || "");
-          default:
-            return 0;
-        }
-      });
-      setFilteredProducts(sorted);
-    };
-
-    sortProducts();
+  // Compute sorted products based on the current sortBy and products state
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => {
+      switch (sortBy) {
+        case "featured":
+          return a.isFeatured ? -1 : 1;
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "rating":
+          return b.rating - a.rating;
+        case "newest":
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case "a-z":
+          return (a.name || "").localeCompare(b.name || "");
+        case "z-a":
+          return (b.name || "").localeCompare(a.name || "");
+        default:
+          return 0;
+      }
+    });
   }, [sortBy, products]);
 
   // Navigate to product details page
@@ -105,18 +97,21 @@ export default function ShopPage() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.length === 0 && !loading ? (
+          {sortedProducts.length === 0 && !loading ? (
             <p>No products available in this category.</p>
           ) : (
-            filteredProducts.map((product) => (
+            sortedProducts.map((product) => (
               <ProductCard
                 key={product._id}
                 _id={product._id}
                 name={product.name}
                 price={product.price}
-                discount={product.discount}
                 images={product.images || []}
                 onClick={() => handleClick(product._id)}
+                hasOffer={product.hasOffer}
+                discountedPrice={product.discountedPrice} // Make sure this matches your backend field name.
+                offer={product.offer}
+                stock={product.stock}
               />
             ))
           )}

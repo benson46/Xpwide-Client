@@ -44,11 +44,15 @@ export default function Dashboard() {
         },
         responseType: "blob",
       });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      const url = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = url;
+      if(type === "excel"){
+        link.setAttribute("download", `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      }else{
       link.setAttribute("download", `sales_report.${type}`);
+      }
       document.body.appendChild(link);
       link.click();
       link.remove();

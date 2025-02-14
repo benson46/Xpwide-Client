@@ -1,5 +1,7 @@
-import React, { memo } from "react";
-import PropTypes from "prop-types"; 
+"use client";
+
+import { memo } from "react";
+import PropTypes from "prop-types";
 import {
   LayoutGrid,
   ShoppingCart,
@@ -8,9 +10,8 @@ import {
   Grid,
   Ticket,
   ImageIcon,
-  Wallet,
-  Percent,
   Tag,
+  Percent,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -26,14 +27,17 @@ export const menuItems = [
   { name: "Offers", icon: Percent, path: "/offers" },
 ];
 
-const Sidebar = ({ activePage }) => {
+const Sidebar = ({ activePage, isCollapsed }) => {
   const navigate = useNavigate();
+
   const handleClick = (path) => {
     navigate(`/admin${path}`);
   };
 
   return (
-    <aside className="w-64 min-h-[calc(100vh-73px)] bg-black border-r border-gray-800">
+    <aside
+      className={`w-full sm:w-[${isCollapsed ? "4rem" : "16rem"}] min-h-[calc(100vh-73px)] bg-black border-r border-gray-800 transition-all duration-300 ease-in-out overflow-hidden`}
+    >
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
@@ -42,15 +46,16 @@ const Sidebar = ({ activePage }) => {
               <li key={item.name}>
                 <button
                   onClick={() => handleClick(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-2 rounded-md transition-colors
-                    ${
-                      activePage === item.name
-                        ? "bg-yellow-500 text-black"
-                        : "text-white hover:bg-gray-900"
-                    }`}
+                  className={`w-full flex items-center ${
+                    isCollapsed ? "justify-center px-2" : "gap-3 px-4"
+                  } py-2 rounded-md transition-colors ${
+                    activePage === item.name
+                      ? "bg-yellow-500 text-black"
+                      : "text-white hover:bg-gray-900"
+                  }`}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.name}</span>
+                  {!isCollapsed && <span>{item.name}</span>}
                 </button>
               </li>
             );
@@ -61,9 +66,9 @@ const Sidebar = ({ activePage }) => {
   );
 };
 
-// Wrap in React.memo
-export default memo(Sidebar);
-
 Sidebar.propTypes = {
-  activePage: PropTypes.string.isRequired
+  activePage: PropTypes.string.isRequired,
+  isCollapsed: PropTypes.bool.isRequired,
 };
+
+export default memo(Sidebar);
