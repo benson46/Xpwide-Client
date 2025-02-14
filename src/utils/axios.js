@@ -74,8 +74,8 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("user");
       window.location.href = "/login";
     } else {
-      if(error.response.data.message){
-        toast.error(error.response?.data?.message )
+      if (error.response.data.message) {
+        toast.error(error.response?.data?.message);
       }
     }
     return Promise.reject(error);
@@ -94,14 +94,6 @@ export const googleAxiosInstance = axios.create({
 
 adminAxiosInstance.interceptors.request.use(
   (config) => {
-    const admin = JSON.parse(localStorage.getItem("adminInfo"));
-    if (admin) {
-      const { adminAccessToken } = admin;
-      if (adminAccessToken) {
-        config.headers["Authorization"] = `Bearer ${adminAccessToken}`;
-      }
-    }
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -110,24 +102,9 @@ adminAxiosInstance.interceptors.request.use(
 adminAxiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    toast.error(error.response.data.message);
-    if (error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const resultAction = await adminAxiosInstance.post("/refresh-access-token");
-        const admin = JSON.parse(localStorage.getItem("adminInfo"));
-        
-        if(admin){
-          admin.adminAccessToken = resultAction.data.adminAccessToken;
-          localStorage.setItem("adminInfo", JSON.stringify(admin));
-        }
-        return adminAxiosInstance(originalRequest);
-      } catch (error) {
-        console.error("Token refresh failed:", error);
-        store.dispatch(logoutAdmin());
-        return Promise.reject(error);
-      }
+    if (error.response.status === 401) {
+      store.dispatch(logoutAdmin());
     }
+    return Promise.reject(error);
   }
 );

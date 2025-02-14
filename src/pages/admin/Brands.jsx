@@ -7,7 +7,8 @@ import AddBrandModal from "../../components/admin/brandModal/AddBrandMoal";
 import EditBrandModal from "../../components/admin/brandModal/EditBrandModal"; // Import the edit modal
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
-import Pagination from "../../components/Pagination";
+import Table from "../../components/ui/admin/Table";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 export default function Brands() {
   const [isAddBrandModalOpen, setIsAddBrandModalOpen] = useState(false);
@@ -15,33 +16,44 @@ export default function Brands() {
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalBrands, setTotalBrands] = useState(0);
   const itemsPerPage = 10;
+
+  // Confirmation modal state for toggling status
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+  });
 
   const fetchBrand = async () => {
     try {
-      const response = await adminAxiosInstance.get("/brands");
-      setBrands(response.data.brands || []);
-      setLoading(false);
+      const response = await adminAxiosInstance.get("/brands", {
+        params: { page: currentPage, limit: itemsPerPage },
+      });
+      setBrands(response.data.brands);
+      setTotalBrands(response.data.totalBrands);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch brands.");
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchBrand();
-  }, []);
+  }, [currentPage]);
 
   const handleAddBrand = async (formData) => {
     try {
       const isBrandExist = brands.some(
         (brand) => brand.title.toLowerCase() === formData.title.toLowerCase()
       );
-      console.log(isBrandExist);
-
       if (isBrandExist) {
         toast.error("Brand should be unique");
         return;
@@ -49,7 +61,6 @@ export default function Brands() {
 
       await adminAxiosInstance.post("/brands", formData);
       toast.success("Brand added successfully!");
-
       fetchBrand();
     } catch (error) {
       console.error(error);
@@ -61,15 +72,11 @@ export default function Brands() {
     try {
       if (updatedBrand) {
         const isBrandExist = brands.some((brand) => {
-          if (
+          return (
             brand.title.toLowerCase() === updatedBrand.title.toLowerCase() &&
-            brand._id != updatedBrand._id
-          ) {
-            return true;
-          }
-          return false;
+            brand._id !== updatedBrand._id
+          );
         });
-        console.log(isBrandExist);
 
         if (isBrandExist) {
           toast.error("Brand should be unique");
@@ -91,6 +98,7 @@ export default function Brands() {
     }
   };
 
+  // Original function to update status
   const toggleStatus = async (id) => {
     try {
       await adminAxiosInstance.patch("/brands", { brandId: id });
@@ -102,110 +110,104 @@ export default function Brands() {
     }
   };
 
-  const totalPages = Math.ceil(brands.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBrands = brands.slice(indexOfFirstItem, indexOfLastItem);
+  // Wrap toggleStatus with confirmation
+  const handleToggleStatus = (brand) => {
+    setConfirmModal({
+      isOpen: true,
+      title: brand.isBlocked ? "List Brand" : "Unlist Brand",
+      message: `Are you sure you want to ${
+        brand.isBlocked ? "list" : "unlist"
+      } the brand "${brand.title}"?`,
+      onConfirm: async () => {
+        await toggleStatus(brand._id);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () =>
+        setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+    });
+  };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
+  const tableHeaders = [
+    { key: "brand", label: "BRAND" },
+    { key: "description", label: "DESCRIPTION" },
+    { key: "action", label: "ACTION" },
+  ];
+
+  const renderUserRow = (brand) => (
+    <tr key={brand._id} className="border-b border-gray-800">
+      <td className="py-3 px-4">{brand.title}</td>
+      <td className="py-3 px-4 text-center">
+        {(brand.description || "No description available")
+          .split(" ")
+          .map((word, index) => (
+            <span key={index}>
+              {word}
+              {index === 2 ? <br /> : " "}
+            </span>
+          ))}
+      </td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          <button
+            className={`px-4 py-1 rounded-md text-sm font-medium ${
+              brand.isBlocked
+                ? "bg-green-500 hover:bg-green-600"
+                : "bg-red-500 hover:bg-red-600"
+            }`}
+            onClick={() => handleToggleStatus(brand)}
+          >
+            {brand.isBlocked ? "List" : "Unlist"}
+          </button>
+          <button
+            className="p-1 hover:bg-gray-800 rounded"
+            onClick={() => {
+              setSelectedBrand(brand);
+              setIsEditBrandModalOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
+      <Navbar toggleSidebar={toggleSidebar} />
 
       <div className="flex">
-        <Sidebar activePage="Brands" />
-
+        <Sidebar activePage="Brands" isCollapsed={isCollapsed} />
         {/* Main Content */}
         <main className="flex-1 p-6">
-          {/* Brands Section */}
-          <div className="mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-semibold">BRANDS</h1>
-              <button
-                onClick={() => setIsAddBrandModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                Add Brand
-              </button>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg bg-gray-900">
-              {loading ? (
-                <div className="flex justify-center items-center h-40">
-                  <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left border-b border-gray-800">
-                      <th className="text-left py-3 px-4">Brand</th>
-                      <th className="py-3 px-4 text-center">DESCRIPTION</th>
-                      <th className="py-3 px-4">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brands.length > 0 ? (
-                      brands.map((brand, index) => (
-                        <tr key={index} className="border-b border-gray-800">
-                          <td className="py-3 px-4">{brand.title}</td>
-                          <td className="py-3 px-4 text-center">
-                            {(brand.description || "No description available")
-                              .split(" ")
-                              .map((word, index) => (
-                                <span key={index}>
-                                  {word}
-                                  {index === 2 ? <br /> : " "}
-                                </span>
-                              ))}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                className={`px-4 py-1 rounded-md text-sm font-medium ${
-                                  brand.isBlocked
-                                    ? "bg-green-500 hover:bg-green-600"
-                                    : "bg-red-500 hover:bg-red-600"
-                                }`}
-                                onClick={() => toggleStatus(brand._id)}
-                              >
-                                {brand.isBlocked ? "List" : "Unlist"}
-                              </button>
-                              <button
-                                className="p-1 hover:bg-gray-800 rounded"
-                                onClick={() => {
-                                  setSelectedBrand(brand);
-                                  setIsEditBrandModalOpen(true);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="text-center py-4">
-                          No brands available.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-xl sm:text-2xl font-semibold">BRANDS</h1>
           </div>
-          {/* Pagination */}
-          <Pagination
+          <button
+            onClick={() => setIsAddBrandModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Add Brand
+          </button>
+          {/* Table Container */}
+          <Table
+            headers={tableHeaders}
+            rows={brands}
+            loading={loading}
             currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            totalItems={brands.length}
+            totalItems={totalBrands}
+            onPageChange={handlePageChange}
+            renderRow={(brand) => renderUserRow(brand)}
           />
         </main>
       </div>
@@ -214,13 +216,21 @@ export default function Brands() {
         onClose={() => setIsAddBrandModalOpen(false)}
         onSubmit={handleAddBrand}
       />
-
       <EditBrandModal
         isOpen={isEditBrandModalOpen}
         onClose={() => setIsEditBrandModalOpen(false)}
         brand={selectedBrand}
         onUpdate={handleEditBrand}
       />
+      {confirmModal.isOpen && (
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={confirmModal.onCancel}
+        />
+      )}
     </div>
   );
 }

@@ -32,8 +32,10 @@ export default function CheckoutPage() {
     couponDiscount: 0,
     total: 0,
   });
+  // NEW: State for storing public coupons
+  const [publicCoupons, setPublicCoupons] = useState([]);
 
-  // Fetch initial data
+  // Fetch initial checkout, address, and wallet data
   useEffect(() => {
     if (!user) {
       toast.error("Please login to continue");
@@ -60,11 +62,11 @@ export default function CheckoutPage() {
         const summary = checkoutResponse.data;
         setOrderSummary({
           quantity: summary.quantity || 0,
-          originalPrice: summary.total || 0, // Changed from subtotal to total
+          originalPrice: summary.total || 0,
           discountedPrice: 0,
           deliveryFee: summary.deliveryFee || 0,
           couponDiscount: summary.couponDiscount || 0,
-          total: summary.total || 0, // Changed from subtotal to total
+          total: summary.total || 0,
         });
 
         setWalletBalance(walletResponse.data.wallet?.balance || 0);
@@ -78,6 +80,28 @@ export default function CheckoutPage() {
 
     fetchData();
   }, [user, navigate]);
+
+  // NEW: Fetch public coupons for checkout (coupons marked as public and active)
+  useEffect(() => {
+    if (user) {
+      const fetchPublicCoupons = async () => {
+        try {
+          const response = await axiosInstance.get("/coupon/public");
+          setPublicCoupons(response.data.coupons);
+        } catch (error) {
+          console.error("Failed to fetch public coupons", error);
+          toast.error("Failed to fetch available coupons");
+        }
+      };
+      fetchPublicCoupons();
+    }
+  }, [user]);
+
+  // Function to populate the coupon code when a public coupon is selected
+  const handleSelectCoupon = (coupon) => {
+    setCouponCode(coupon.code);
+    toast.success(`Coupon ${coupon.code} selected. Click apply to use it.`);
+  };
 
   // Handle address submission
   const handleAddressSubmit = async (formData, addressId) => {
@@ -103,7 +127,7 @@ export default function CheckoutPage() {
       setShowAddAddress(false);
     } catch (error) {
       console.error("Address submission error:", error);
-      toast.error(`Failed to ${isEditing ? "update" : "add"} address`);
+      toast.error(`Failed to ${editingAddressId ? "update" : "add"} address`);
     }
   };
 
@@ -124,11 +148,11 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await axiosInstance.post("/apply", {
+      const response = await axiosInstance.post("/coupon/apply", {
         code: couponCode,
         cartTotal: orderSummary.originalPrice,
         cartItems: products.map((item) => ({
-          productId: item.productId._id, // Send product IDs from cart items
+          productId: item.productId._id,
         })),
       });
 
@@ -139,18 +163,19 @@ export default function CheckoutPage() {
       }));
       toast.success(response.data.message);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to apply coupon");
+      toast.error(
+        error.response?.data?.message || "Failed to apply coupon"
+      );
     }
   };
 
   // Handle coupon removal
   const handleRemoveCoupon = () => {
-    // Reset the coupon code and update the order summary:
     setCouponCode("");
     setOrderSummary((prev) => ({
       ...prev,
       couponDiscount: 0,
-      total: prev.originalPrice, // Reset to originalPrice; adjust if deliveryFee is to be added
+      total: prev.originalPrice,
     }));
     toast.success("Coupon removed");
   };
@@ -185,7 +210,9 @@ export default function CheckoutPage() {
           amount: orderSummary.total,
           paymentStatus: "completed",
           type: "debit",
-          products: products.map((item) => ({ productId: item.productId._id })),
+          products: products.map((item) => ({
+            productId: item.productId._id,
+          })),
         });
       }
 
@@ -216,16 +243,13 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4">Product Details</h2>
             {products.map((product) => {
-              // Destructure the product details from product.productId for convenience
               const prod = product.productId;
-              // Determine the effective price: if an offer is active and discountedPrice is valid, use it; otherwise use the original price.
               const effectivePrice =
                 prod.hasOffer &&
                 prod.discountedPrice &&
                 prod.discountedPrice !== 0
                   ? prod.discountedPrice
                   : prod.price;
-              // Calculate per-item total (effective price * quantity)
               const itemTotal = effectivePrice * product.quantity;
 
               return (
@@ -267,7 +291,6 @@ export default function CheckoutPage() {
                       )}
                     </div>
                   </div>
-                  {/* Per-item total price displayed on the right */}
                   <div className="flex items-center font-bold">
                     ₹{itemTotal.toFixed(2)}
                   </div>
@@ -301,7 +324,6 @@ export default function CheckoutPage() {
                 <p>No addresses available.</p>
               )}
 
-              {/* Add New Address Button */}
               <button
                 onClick={() => {
                   setShowAddAddress(!showAddAddress);
@@ -313,7 +335,6 @@ export default function CheckoutPage() {
                 {showAddAddress ? "Hide Form" : "Add New Address"}
               </button>
 
-              {/* Add New Address Form */}
               {showAddAddress && !editingAddressId && (
                 <div className="border rounded-lg p-4 mt-4">
                   <h3 className="font-medium mb-4">Add New Address</h3>
@@ -425,7 +446,6 @@ export default function CheckoutPage() {
                 >
                   Apply
                 </button>
-                {/* Show Remove Coupon option if a coupon is applied */}
                 {orderSummary.couponDiscount > 0 && (
                   <button
                     onClick={handleRemoveCoupon}
@@ -446,6 +466,36 @@ export default function CheckoutPage() {
               )}
             </div>
 
+            {/* NEW: Display available public coupons */}
+            {publicCoupons.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-bold mb-2">Available Coupons</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {publicCoupons.map((coupon) => (
+                    <div
+                      key={coupon._id}
+                      className="border border-gray-300 rounded-lg p-4 bg-gray-100 cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleSelectCoupon(coupon)}
+                    >
+                      <div className="font-bold text-gray-800">
+                        {coupon.code}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Discount: {coupon.discount}%
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Min Purchase: ₹{coupon.minPurchaseAmount}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Expires on:{" "}
+                        {new Date(coupon.expiryDate).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between font-medium text-base pt-2">
               <span>Total Amount</span>
               <span className="flex items-center">
@@ -456,10 +506,9 @@ export default function CheckoutPage() {
 
             {orderSummary.originalPrice - orderSummary.total > 0 && (
               <div className="text-green-600 text-sm text-right">
-                You will save <IndianRupee className="h-3 w-3 inline" />
-                {(
-                  orderSummary.originalPrice - orderSummary.total
-                ).toLocaleString()}{" "}
+                You will save{" "}
+                <IndianRupee className="h-3 w-3 inline" />{" "}
+                {(orderSummary.originalPrice - orderSummary.total).toLocaleString()}{" "}
                 on this order
               </div>
             )}

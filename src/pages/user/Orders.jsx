@@ -241,7 +241,7 @@ export default function Orders() {
                       <strong>Order ID:</strong> {selectedOrder._id}
                     </p>
                     <p>
-                      <strong>Customer Name:</strong> {name} {console.log(selectedOrder)}
+                      <strong>Customer Name:</strong> {name}
                     </p>
                     <p>
                       <strong>Product:</strong>

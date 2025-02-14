@@ -8,7 +8,7 @@ export const adminLogin = createAsyncThunk(
     try {
       const response = await adminAxiosInstance.post("/login", formData);
       const adminData = response.data.admin;
-
+      console.log('hello:',adminData)
       localStorage.setItem("adminInfo", JSON.stringify(adminData));
 
       return adminData;

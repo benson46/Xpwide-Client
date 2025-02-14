@@ -39,7 +39,6 @@ export default function ManageAddress() {
         }
       } catch (error) {
         toast.error("An error occurred while fetching addresses.");
-        console.log(error)
       }
     };
 
@@ -80,7 +79,6 @@ export default function ManageAddress() {
         setDeletingId(null);
       } catch (error) {
         toast.error("Failed to delete address.");
-        console.log(error)
       }
     }
   };
@@ -123,7 +121,6 @@ export default function ManageAddress() {
         }
       }
     } catch (error) {
-      console.log(error)
       toast.error("Failed to save address.");
     }
   };

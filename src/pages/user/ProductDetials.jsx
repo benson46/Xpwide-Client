@@ -68,7 +68,6 @@ export default function ProductDetails() {
           },
           
         });
-        console.log("Fetched Product:", relatedProducts.data.products); // Debugging
         setRelatedProducts(relatedProducts.data.products);
         checkWishlistStatus(response.data.product._id);
       }

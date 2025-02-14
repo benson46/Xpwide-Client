@@ -21,27 +21,25 @@ export default function Cart() {
         });
 
         const cartProducts = response.data.items;
-        console.log("Cart Items:", response.data.items);
         if (cartProducts && cartProducts.length > 0) {
-          setProducts(
-            cartProducts.map((item) => {
-              const prod = item.productId;
-              return {
-                id: prod._id,
-                name: prod.name,
-                category: prod.category, // adjust if you need a title or similar
-                manufacturer: prod.manufacturer, // adjust as needed
-                // Use discountedPrice if an offer exists, otherwise the original price
-                price: prod.hasOffer ? prod.discountedPrice : prod.price,
-                originalPrice: prod.price,
-                hasOffer: prod.hasOffer,
-                offer: prod.offer,
-                quantity: item.quantity,
-                stock: prod.stock,
-                image: prod.images[0],
-              };
-            })
-          );
+          const mappedProducts = cartProducts.map((item) => {
+            const prod = item.productId;
+            return {
+              id: prod._id,
+              name: prod.name,
+              category: prod.category,
+              manufacturer: prod.manufacturer,
+              // Use discountedPrice if an offer exists, otherwise the original price
+              price: prod.hasOffer ? prod.discountedPrice : prod.price,
+              originalPrice: prod.price,
+              hasOffer: prod.hasOffer,
+              offer: prod.offer,
+              quantity: item.quantity,
+              stock: prod.stock,
+              image: prod.images[0],
+            };
+          });
+          setProducts(mappedProducts);
           setSubtotal(response.data.subtotal);
         } else {
           setProducts([]);
@@ -58,44 +56,34 @@ export default function Cart() {
   }, []);
 
   const updateQuantity = async (id, change) => {
-    setProducts((prevProducts) => {
-      const updatedProducts = prevProducts.map((product) => {
-        if (product.id === id) {
-          const newQuantity = product.quantity + change;
-          if (newQuantity < 1) return product;
-          if (newQuantity > product.stock || newQuantity > 5) return product;
-          return { ...product, quantity: newQuantity };
-        }
-        return product;
-      });
-
-      const newSubtotal = updatedProducts.reduce(
-        (sum, product) => sum + product.price * product.quantity,
-        0
-      );
-      setSubtotal(newSubtotal);
-
-      return updatedProducts;
-    });
-
     try {
-      const updatedProduct = products.find((product) => product.id === id);
-      if (updatedProduct) {
-        const response = await axiosInstance.patch(
-          "/cart",
-          {
-            productId: id,
-            quantity: updatedProduct.quantity + change,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        if (response.status === 200) {
-          toast.success(response.data.message);
-        }
+      // Find the product in current state
+      const product = products.find((product) => product.id === id);
+      if (!product) return;
+      const newQuantity = product.quantity + change;
+      if (newQuantity < 1 || newQuantity > product.stock || newQuantity > 5) return;
+
+      // API call to update quantity
+      const response = await axiosInstance.patch(
+        "/cart",
+        { productId: id, quantity: newQuantity },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+
+      if (response.data.success) {
+        // Update local state only if API call was successful
+        setProducts((prevProducts) => {
+          const updated = prevProducts.map((p) =>
+            p.id === id ? { ...p, quantity: newQuantity } : p
+          );
+          const newSubtotal = updated.reduce(
+            (sum, p) => sum + p.price * p.quantity,
+            0
+          );
+          setSubtotal(newSubtotal);
+          return updated;
+        });
+        toast.success(response.data.message);
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
@@ -103,23 +91,26 @@ export default function Cart() {
   };
 
   const removeProduct = async (id) => {
-    setProducts((prevProducts) => {
-      const updatedProducts = prevProducts.filter(
-        (product) => product.id !== id
-      );
-      if (updatedProducts.length === 0) setSubtotal(0);
-      return updatedProducts;
-    });
-
     try {
-      await axiosInstance.delete("/cart", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        data: {
-          productId: id,
-        },
+      // Make the API call to remove the product
+      const res = await axiosInstance.delete("/cart", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        data: { productId: id },
       });
+
+      if (res.data.success) {
+        // Update local state only if API call was successful
+        setProducts((prevProducts) => {
+          const updatedProducts = prevProducts.filter((p) => p.id !== id);
+          const newSubtotal = updatedProducts.reduce(
+            (sum, p) => sum + p.price * p.quantity,
+            0
+          );
+          setSubtotal(newSubtotal);
+          return updatedProducts;
+        });
+        toast.success(res.data.message);
+      }
     } catch (error) {
       console.error("Error removing product:", error);
     }
@@ -254,7 +245,7 @@ export default function Cart() {
                         </button>
                       </div>
 
-                      {/* Per item total price displayed on the right */}
+                      {/* Per item total price */}
                       <div className="ml-auto font-bold">
                         ₹{(product.price * product.quantity).toFixed(2)}
                       </div>

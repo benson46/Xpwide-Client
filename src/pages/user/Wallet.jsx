@@ -51,7 +51,6 @@ export default function Wallet() {
       setAmount(""); 
     } catch (err) {
       setError("Transaction failed. Please try again.");
-      console.log(err)
     } finally {
       setLoading(false);
     }

@@ -8,13 +8,14 @@ const Wishlist = () => {
   const user = useSelector((state) => state.user?.user);
 
   useEffect(() => {
-    if (user) fetchWishlist();
+    if (user) {
+      fetchWishlist();
+    }
   }, [user]);
 
   const fetchWishlist = async () => {
     try {
       const { data } = await axiosInstance.get("/get-wishlist");
-      console.log(data)
       setWishlistItems(data.wishlists || []);
     } catch (error) {
       console.error("Error fetching wishlist", error);
@@ -23,37 +24,38 @@ const Wishlist = () => {
 
   const handleAddToCart = async (item) => {
     try {
-      // Fetch the current cart from the backend
       const { data } = await axiosInstance.get("/cart");
-      const cartItems = data.items; // Extract items from the response
+      const cartItems = data.items;
 
-      // Check if the item is already in the cart
-      const itemInCart = cartItems.some((cartItem) => {
-        console.log(`cart item Id : ${JSON.stringify(cartItem.productId)}`);
-        return cartItem.productId._id.toString() === item._id.toString();
-      });
-      console.log(`item: ${JSON.stringify(item)}`)
-
-      console.log(itemInCart)
+      const itemInCart = cartItems.some(
+        (cartItem) => cartItem.productId._id.toString() === item._id.toString()
+      );
 
       if (itemInCart) {
-        // Item is already in the cart, show a toast message
         toast.error(`${item.name} is already in the cart`);
-      } else {
-        // Item is not in the cart, add to the cart
-        if (item.stock) {
-          await axiosInstance.post("/cart", {
-            productId: item._id,
-            quantity: 1,
-          });
-          toast.success(`${item.name} added to cart`);
-        }
+        return; // Early return to avoid further processing
+      }
+
+      if (item.stock) {
+        await axiosInstance.post("/cart", {
+          productId: item._id,
+          quantity: 1,
+        });
+
+        //Optimistic update - Remove from wishlist immediately for better UX
+        setWishlistItems((prev) => prev.filter((wishlistItem) => wishlistItem.product._id !== item._id));
+
+        //Call API to remove from wishlist after adding to cart
+        await axiosInstance.post("/add-wishlist", { productId: item._id });
+
+        toast.success(`${item.name} added to cart`);
       }
     } catch (error) {
-      console.error("Error fetching cart data", error);
-      toast.error("Error checking cart status");
+      console.error("Error adding to cart:", error);
+      toast.error("Error adding to cart");
     }
   };
+
 
   const handleRemoveFromWishlist = async (productId) => {
     try {
@@ -73,7 +75,6 @@ const Wishlist = () => {
       </h1>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Header - Hidden on mobile */}
         <div className="hidden sm:grid sm:grid-cols-12 gap-4 p-4 border-b text-sm font-semibold bg-gray-50">
           <div className="sm:col-span-5">PRODUCT</div>
           <div className="sm:col-span-2">PRICE</div>
@@ -81,7 +82,6 @@ const Wishlist = () => {
           <div className="sm:col-span-3">ACTIONS</div>
         </div>
 
-        {/* Items */}
         <div className="divide-y">
           {wishlistItems.length === 0 ? (
             <div className="p-8 text-center">
@@ -96,7 +96,6 @@ const Wishlist = () => {
                 key={product._id}
                 className="flex flex-col sm:grid sm:grid-cols-12 gap-4 p-4 items-start sm:items-center"
               >
-                {/* Product */}
                 <div className="flex gap-4 w-full sm:col-span-5">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
                     <img
@@ -110,21 +109,19 @@ const Wishlist = () => {
                       {product.name}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                      {product.category.title}
+                      {product.category?.title}
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600">
-                      {product.brand.title}
+                      {product.brand?.title}
                     </p>
                   </div>
                 </div>
 
-                {/* Price - Responsive positioning */}
                 <div className="sm:col-span-2 text-sm sm:text-base">
                   <span className="sm:hidden text-gray-600 mr-2">Price:</span>₹
                   {product.price}
                 </div>
 
-                {/* Stock Status */}
                 <div className="sm:col-span-2">
                   <span
                     className={`inline-block px-2 py-1 rounded text-xs ${
@@ -137,7 +134,6 @@ const Wishlist = () => {
                   </span>
                 </div>
 
-                {/* Actions */}
                 <div className="flex sm:flex-col gap-2 sm:gap-2 w-full sm:w-auto sm:col-span-3">
                   <button
                     onClick={() => handleAddToCart(product)}

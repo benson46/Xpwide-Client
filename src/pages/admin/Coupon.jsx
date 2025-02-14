@@ -5,6 +5,8 @@ import Pagination from "../../components/Pagination";
 import Navbar from "../../components/admin/Navbar";
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
+import Table from "../../components/ui/admin/Table";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 const Coupons = () => {
   const [coupons, setCoupons] = useState([]);
@@ -15,6 +17,7 @@ const Coupons = () => {
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [totalCoupons, setTotalCoupons] = useState(0);
   const [formData, setFormData] = useState({
     code: "",
     minPurchaseAmount: "",
@@ -23,14 +26,21 @@ const Coupons = () => {
     usageLimit: "",
     discount: "",
     isActive: true,
+    isPublic: false,
     eligibleCategories: [],
   });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+  });
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(coupons.length / itemsPerPage);
-
   // Fetch categories from backend
   useEffect(() => {
     fetchCategories();
@@ -49,10 +59,11 @@ const Coupons = () => {
 
   const fetchCoupons = async () => {
     try {
-      const response = await adminAxiosInstance.get("/coupon");
-      console.log("coupons response ", response.data);
+      const response = await adminAxiosInstance.get("/coupon", {
+        params: { page: currentPage, limit: itemsPerPage },
+      });
       setCoupons(response.data.coupons);
-      console.log("response fetch coupons: ", response.data.coupons);
+      setTotalCoupons(response.data.totalCoupons);
     } catch (error) {
       console.error("Error fetching coupons:", error);
       toast.error("Failed to fetch coupons");
@@ -87,7 +98,8 @@ const Coupons = () => {
     // Frontend validation
     const newErrors = {};
 
-    if (!formData.code || formData.code == "") newErrors.code = "Coupon code is required";
+    if (!formData.code || formData.code == "")
+      newErrors.code = "Coupon code is required";
     if (formData.discount < 1 || formData.discount > 100) {
       newErrors.discount = "Discount must be between 1% and 100%";
     }
@@ -142,27 +154,25 @@ const Coupons = () => {
   };
 
   const handleDelete = (coupon) => {
-    setSelectedCoupon(coupon);
-    setDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!selectedCoupon) return;
-
-    try {
-      await adminAxiosInstance.delete(`/coupon/${selectedCoupon._id}`);
-
-      setCoupons((prevCoupons) =>
-        prevCoupons.filter((coupon) => coupon._id !== selectedCoupon._id)
-      );
-      toast.success("Coupon deleted successfully");
-    } catch (error) {
-      console.error("Error deleting coupon:", error);
-      toast.error("Failed to delete coupon");
-    }
-
-    setDeleteModalOpen(false);
-    setSelectedCoupon(null);
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Coupon",
+      message: "Are you sure you want to delete this coupon?",
+      onConfirm: async () => {
+        try {
+          await adminAxiosInstance.delete(`/coupon/${coupon._id}`);
+          setCoupons((prevCoupons) =>
+            prevCoupons.filter((c) => c._id !== coupon._id)
+          );
+          toast.success("Coupon deleted successfully");
+        } catch (error) {
+          console.error("Error deleting coupon:", error);
+          toast.error("Failed to delete coupon");
+        }
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+    });
   };
 
   const resetForm = () => {
@@ -182,6 +192,10 @@ const Coupons = () => {
     setCurrentPage(pageNumber);
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
   const handleCategoryChange = (e) => {
     const value = Array.from(
       e.target.selectedOptions,
@@ -196,123 +210,116 @@ const Coupons = () => {
     }
   };
 
+  const tableHeaders = [
+    { key: "code", label: "COUPON CODE" },
+    { key: "discount", label: "DISCOUNT" },
+    { key: "minPurchase", label: "MIN PURCHASE" },
+    { key: "date", label: "EXPIRY DATE" },
+    { key: "categories", label: "CATEGORIES" },
+    { key: "status", label: "STATUS" },
+    { key: "action", label: "ACTION" },
+  ];
+
+  const renderUserRow = (coupon) => (
+    <tr key={coupon?._id} className="border-b border-gray-800">
+      <td className="py-3 px-4">{coupon?._id}</td>
+      <td className="py-3 px-4">{coupon?.code}</td>
+      <td className="py-3 px-4">{coupon?.discount}%</td>
+      <td className="py-3 px-4">₹{coupon?.minPurchaseAmount}</td>
+      <td className="py-3 px-4">
+        {new Date(coupon?.expiryDate).toLocaleDateString()}
+      </td>
+      <td className="py-3 px-4">
+        {coupon?.eligibleCategories.length === categories.length
+          ? "All"
+          : coupon?.eligibleCategories
+              .map((categoryId) => {
+                const category = categories.find(
+                  (cat) => cat._id === categoryId
+                );
+                return category ? category?.title : "Unknown";
+              })
+              .join(", ")}
+      </td>
+
+      <td className="py-3 px-4">
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            coupon?.isActive === true
+              ? "bg-yellow-400 text-black"
+              : "bg-gray-800 text-gray-400"
+          }`}
+        >
+          {coupon?.isActive === true ? "Active" : "In Active"}
+        </span>
+      </td>
+      <td className="py-3 px-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(coupon._id)}
+            className="p-1 hover:bg-gray-800 rounded"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(coupon)}
+            className="p-1 hover:bg-red-900/20 rounded"
+          >
+            <Trash className="h-4 w-4 text-red-400" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <div className="w-full">
-        <Navbar />
+        <Navbar toggleSidebar={toggleSidebar} />
       </div>
 
       <div className="flex flex-1">
-        <Sidebar activePage="Coupons" />
-
+        <Sidebar activePage="Coupons" isCollapsed={isCollapsed} />
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-hidden">
-          <div className="mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-semibold text-yellow-400">
-                COUPONS
-              </h1>
-              <button
-                onClick={() => {
-                  setEditingCoupon(null);
-                  resetForm();
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                Add Coupon
-              </button>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg bg-gray-900 -mx-4 md:mx-0">
-              <div className="min-w-[800px]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left border-b border-gray-800">
-                      <th className="py-3 px-4">ID</th>
-                      <th className="py-3 px-4">COUPON CODE</th>
-                      <th className="py-3 px-4">DISCOUNT</th>
-                      <th className="py-3 px-4">MIN PURCHASE</th>
-                      <th className="py-3 px-4">EXPIRY DATE</th>
-                      <th className="py-3 px-4">CATEGORIES</th>
-                      <th className="py-3 px-4">STATUS</th>
-                      <th className="py-3 px-4">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {coupons.map((coupon) => (
-                      <tr
-                        key={coupon?._id}
-                        className="border-b border-gray-800"
-                      >
-                        <td className="py-3 px-4">{coupon?._id}</td>
-                        <td className="py-3 px-4">{coupon?.code}</td>
-                        <td className="py-3 px-4">{coupon?.discount}%</td>
-                        <td className="py-3 px-4">
-                          ₹{coupon?.minPurchaseAmount}
-                        </td>
-                        <td className="py-3 px-4">
-                          {new Date(coupon?.expiryDate).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          {coupon?.eligibleCategories.length ===
-                          categories.length
-                            ? "All"
-                            : coupon?.eligibleCategories
-                                .map((categoryId) => {
-                                  const category = categories.find(
-                                    (cat) => cat._id === categoryId
-                                  );
-                                  return category ? category?.title : "Unknown";
-                                })
-                                .join(", ")}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              coupon?.isActive === true
-                                ? "bg-yellow-400 text-black"
-                                : "bg-gray-800 text-gray-400"
-                            }`}
-                          >
-                            {coupon?.isActive === true ? "Active" : "In Active"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEdit(coupon._id)}
-                              className="p-1 hover:bg-gray-800 rounded"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(coupon)}
-                              className="p-1 hover:bg-red-900/20 rounded"
-                            >
-                              <Trash className="h-4 w-4 text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <main className="flex-1 overflow-hidden flex flex-col p-4 sm:p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-xl sm:text-2xl font-semibold">USERS</h1>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                setEditingCoupon(null);
+                resetForm();
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              Add Coupon
+            </button>{" "}
           </div>
 
-          {/* Pagination */}
-          <Pagination
+          {/* Table Container with proper scrolling */}
+          <Table
+            headers={tableHeaders}
+            rows={coupons}
+            loading={loading}
             currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            totalItems={coupons.length}
+            totalItems={totalCoupons}
+            onPageChange={handlePageChange}
+            renderRow={(coupon) => renderUserRow(coupon)}
           />
+          {confirmModal.isOpen && (
+            <ConfirmModal
+              isOpen={confirmModal.isOpen}
+              title={confirmModal.title}
+              message={confirmModal.message}
+              onConfirm={confirmModal.onConfirm}
+              onCancel={confirmModal.onCancel}
+            />
+          )}
         </main>
+        ;
       </div>
 
       {deleteModalOpen && (
@@ -365,7 +372,6 @@ const Coupons = () => {
                   Coupon Code
                 </label>
                 <input
-                  
                   value={formData.code}
                   onChange={(e) =>
                     setFormData({ ...formData, code: e.target.value })
@@ -515,6 +521,23 @@ const Coupons = () => {
                   </p>
                 )}
               </div>
+              <div className="col-span-1 sm:col-span-2 space-y-2">
+                <label className="text-sm font-medium text-gray-300">
+                  Make Coupon Public
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublic || false}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isPublic: e.target.checked })
+                    }
+                    className="w-4 h-4 text-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm">Yes, display on checkout</span>
+                </div>
+              </div>
+
               <div className="col-span-2 flex justify-end gap-2 mt-4">
                 <button
                   type="button"

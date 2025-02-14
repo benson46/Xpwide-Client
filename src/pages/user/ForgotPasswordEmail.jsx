@@ -14,14 +14,13 @@ export default function ForgotPasswordEmail() {
       const response = await axiosInstance.post("/forgot-password-otp", {
         email,
       });
-      console.log(response);
       navigate("/otp-verification", {
         state: { email, from: "forgot-password" },
       });
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || "Failed to send OTP.";
-      setError(errorMessage); // Display custom error message
+      setError(errorMessage); 
       console.log("Error sending OTP:", error.response);
     }
   };

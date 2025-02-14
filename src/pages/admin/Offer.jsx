@@ -11,11 +11,20 @@ export default function Offer() {
   const [activeTab, setActiveTab] = useState("product");
   const [showModal, setShowModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
+      <Navbar toggleSidebar={toggleSidebar} />
+
       <div className="flex">
-        <Sidebar activePage="Offers" />
+        <div className="sm:block">
+          <Sidebar activePage="Offers" isCollapsed={isCollapsed} />
+        </div>
 
         <main className="flex-1 p-6 max-w-6xl mx-auto bg-black">
           <div className="flex justify-between items-center mb-6">
@@ -30,17 +39,13 @@ export default function Offer() {
 
           <div className="border-b mb-6">
             <button
-              className={`px-4 py-2 mr-4 ${
-                activeTab === "product" ? "border-b-2 border-yellow-400" : ""
-              }`}
+              className={`px-4 py-2 mr-4 ${activeTab === "product" ? "border-b-2 border-yellow-400" : ""}`}
               onClick={() => setActiveTab("product")}
             >
               Product Offers
             </button>
             <button
-              className={`px-4 py-2 ${
-                activeTab === "category" ? "border-b-2 border-yellow-400" : ""
-              }`}
+              className={`px-4 py-2 ${activeTab === "category" ? "border-b-2 border-yellow-400" : ""}`}
               onClick={() => setActiveTab("category")}
             >
               Category Offers

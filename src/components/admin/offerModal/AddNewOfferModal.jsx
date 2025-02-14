@@ -27,7 +27,6 @@ export default function AddNewOfferModal({
       adminAxiosInstance
         .get("/offers/categories")
         .then((res) => {
-          console.log(res);
           setCategories(res.data.data);
         })
         .catch(() => toast.error("Failed to load categories"));
@@ -62,7 +61,7 @@ export default function AddNewOfferModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Validating form data:", formData);
+    ("Validating form data:", formData);
     if (!validateForm()) return;
 
     const offerData = {
@@ -73,7 +72,6 @@ export default function AddNewOfferModal({
       [type]: formData.selection,
     };
 
-    console.log(formData);
 
     try {
       const res = await adminAxiosInstance.post(
@@ -83,7 +81,6 @@ export default function AddNewOfferModal({
       onOfferCreated(res.data.data);
       onClose();
     } catch (error) {
-        // Something else happened while setting up the request
         console.log("Request Error:", error.message);
         toast.error("An unexpected error occurred.");
     }
