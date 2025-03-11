@@ -38,7 +38,7 @@ export default function Wallet() {
     setError(null);
   
     try {
-      const response = await axiosInstance.post("/wallet", {
+      const response = await axiosInstance.put("/wallet", {
         amount: numAmount,
         paymentStatus: "completed",
         type: "credit",

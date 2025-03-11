@@ -1,29 +1,23 @@
-"use client";
-
-import { memo, useCallback } from "react";
+import React,{ memo, useCallback } from "react";
 import { useDispatch } from "react-redux";
-import { logoutAdmin } from "../../store/adminSlice";
+import { adminLogout } from "../../store/adminSlice";
 import { User, LogOut, Menu } from "lucide-react";
-import { adminAxiosInstance } from "../../utils/axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import PropTypes from "prop-types";
 
 const Navbar = ({ toggleSidebar }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const handleLogout = useCallback(async () => {
     try {
-      const response = await adminAxiosInstance.post("/logout");
-      if (response) {
-        dispatch(logoutAdmin());
+        dispatch(adminLogout());
         localStorage.removeItem("adminInfo");
         navigate("/admin");
         toast.success("Logout Success");
-      }
-    } catch (error) {
+    } catch (err) {
       toast.error("Logout Failed");
-      console.error(`Logout Error: ${error}`);
+      console.error(`Logout err: ${err}`);
     }
   }, [dispatch, navigate]);
 
@@ -53,6 +47,10 @@ const Navbar = ({ toggleSidebar }) => {
       </div>
     </nav>
   );
+};
+
+Navbar.propTypes = {
+  toggleSidebar: PropTypes.func.isRequired,
 };
 
 export default memo(Navbar);

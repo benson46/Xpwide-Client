@@ -20,8 +20,8 @@ const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
             email: response.data.userData.email,
             contact: response.data.userData.phoneNumber,
           });
-        } catch (error) {
-          console.error("Error fetching user info:", error);
+        } catch (err) {
+          console.error("Error fetching user info:", err);
         } finally {
           setIsLoadingUserInfo(false);
         }

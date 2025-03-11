@@ -65,7 +65,7 @@ export default function OTPVerification() {
         toast.error("Invalid navigation state. Try again.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to verify OTP");
+      console.error('OTP VERIFICATION ERROR : ',error)
     }
   };
 

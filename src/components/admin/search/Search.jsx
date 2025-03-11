@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import React,{ useEffect, useState } from "react";
 import { adminAxiosInstance } from "../../../utils/axios";
 
-// In SearchComponent.jsx
 const SearchComponent = ({ entity, placeholder, onFilter, extraParams = {} }) => {
     const [query, setQuery] = useState("");
   
@@ -13,7 +12,7 @@ const SearchComponent = ({ entity, placeholder, onFilter, extraParams = {} }) =>
           adminAxiosInstance
             .get(`/search/${entity}`, { params: { q: query, ...extraParams } })
             .then((response) => onFilter(response.data))
-            .catch((error) => console.error("Search error:", error));
+            .catch((err) => console.error("Search error:", err));
         }
       }, 300);
   

@@ -15,8 +15,8 @@ const ProductGrid = () => {
       try {
         const response = await axiosInstance.get("/featured-products");
         setProducts(response.data.products);
-      } catch (error) {
-        toast.error("Failed to fetch products:", error);
+      } catch (err) {
+        toast.error("Failed to fetch products:", err);
       } finally {
         setLoading(false);
       }

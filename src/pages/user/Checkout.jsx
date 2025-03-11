@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../utils/axios";
 import { IndianRupee, Plus } from "lucide-react";
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     couponDiscount: 0,
     total: 0,
   });
-  // NEW: State for storing public coupons
+
   const [publicCoupons, setPublicCoupons] = useState([]);
 
   // Fetch initial checkout, address, and wallet data
@@ -57,18 +57,17 @@ export default function CheckoutPage() {
         if (addressList.length > 0) {
           setSelectedAddress(addressList[0]._id);
         }
-
         setProducts(checkoutResponse.data.items || []);
         const summary = checkoutResponse.data;
+        console.log(summary);
         setOrderSummary({
-          quantity: summary.quantity || 0,
-          originalPrice: summary.total || 0,
+          quantity: summary.totalQuantity || 0,
+          originalPrice: summary.originalPrice || 0,
           discountedPrice: 0,
-          deliveryFee: summary.deliveryFee || 0,
-          couponDiscount: summary.couponDiscount || 0,
+          deliveryFee: 0,
+          couponDiscount: 0,
           total: summary.total || 0,
         });
-
         setWalletBalance(walletResponse.data.wallet?.balance || 0);
       } catch (error) {
         console.error("Fetch error:", error);
@@ -81,21 +80,23 @@ export default function CheckoutPage() {
     fetchData();
   }, [user, navigate]);
 
-  // NEW: Fetch public coupons for checkout (coupons marked as public and active)
+  // Fetch public coupons for checkout (coupons marked as public and active)
   useEffect(() => {
     if (user) {
       const fetchPublicCoupons = async () => {
         try {
           const response = await axiosInstance.get("/coupon/public");
+          // const eligibleCoupons = response.data.coupons.filter(
+          //   (coupon) => orderSummary.originalPrice >= coupon.minPurchaseAmount
+          // );
           setPublicCoupons(response.data.coupons);
         } catch (error) {
-          console.error("Failed to fetch public coupons", error);
-          toast.error("Failed to fetch available coupons");
+          console.error("Failed to fetch coupons", error);
         }
       };
       fetchPublicCoupons();
     }
-  }, [user]);
+  }, [user, orderSummary.originalPrice]); // Add dependency
 
   // Function to populate the coupon code when a public coupon is selected
   const handleSelectCoupon = (coupon) => {
@@ -110,24 +111,34 @@ export default function CheckoutPage() {
       const endpoint = isEditing ? `/address/${addressId}` : "/address";
       const method = isEditing ? "put" : "post";
 
-      await axiosInstance[method](endpoint, formData);
+      const response = await axiosInstance[method](endpoint, formData);
 
-      // Fetch updated address list
-      const addressResponse = await axiosInstance.get("/address");
-      const addressList = addressResponse.data.addresses || [];
-      setAddresses(addressList);
-
-      if (!isEditing) {
-        const newAddressId = addressList[addressList.length - 1]._id;
-        setSelectedAddress(newAddressId);
+      if (response.data.success) {
+        const newAddress = response.data.savedAddress;
+        if (isEditing) {
+          // Update the existing address in state
+          setAddresses((prevAddresses) =>
+            prevAddresses.map((addr) =>
+              addr._id === newAddress._id ? newAddress : addr
+            )
+          );
+        } else {
+          // Add the new address to state and select it
+          setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
+          console.log(newAddress);
+          setSelectedAddress(newAddress._id);
+        }
+        toast.success(
+          `Address ${isEditing ? "updated" : "added"} successfully`
+        );
+      } else {
+        toast.error(`Failed to ${isEditing ? "update" : "add"} address`);
       }
-
-      toast.success(`Address ${isEditing ? "updated" : "added"} successfully`);
       setEditingAddressId(null);
       setShowAddAddress(false);
     } catch (error) {
       console.error("Address submission error:", error);
-      toast.error(`Failed to ${editingAddressId ? "update" : "add"} address`);
+      toast.error(`Failed to ${addressId ? "update" : "add"} address`);
     }
   };
 
@@ -147,6 +158,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    const coupon = publicCoupons.find((c) => c.code === couponCode);
+    if (coupon && orderSummary.originalPrice < coupon.minPurchaseAmount) {
+      toast.error(`Requires ₹${coupon.minPurchaseAmount} minimum purchase`);
+      return;
+    }
+
     try {
       const response = await axiosInstance.post("/coupon/apply", {
         code: couponCode,
@@ -163,9 +180,7 @@ export default function CheckoutPage() {
       }));
       toast.success(response.data.message);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to apply coupon"
-      );
+      toast.error(error.response?.data?.message || "Failed to apply coupon");
     }
   };
 
@@ -201,12 +216,12 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         totalAmount: orderSummary.total,
+        couponCode: couponCode,
       };
 
-      await axiosInstance.post("/checkout-order-success", orderData);
-
+      // For wallet payments, first handle the wallet transaction
       if (paymentMethod === "Wallet") {
-        await axiosInstance.post("/wallet", {
+        const res = await axiosInstance.put("/wallet", {
           amount: orderSummary.total,
           paymentStatus: "completed",
           type: "debit",
@@ -214,13 +229,27 @@ export default function CheckoutPage() {
             productId: item.productId._id,
           })),
         });
+
+        // Check if wallet update was successful
+        if (!res.data.success) {
+          toast.error("Wallet transaction failed");
+          return;
+        }
       }
+
+      // Proceed with order creation after successful wallet transaction
+      await axiosInstance.post("/checkout-order-success", orderData);
 
       toast.success("Order placed successfully!");
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Order placement error:", error);
       toast.error("Failed to place order");
+
+      // Handle specific error case for wallet transactions
+      if (paymentMethod === "Wallet") {
+        toast.error("Wallet transaction failed. Order was not placed.");
+      }
     }
   };
 
@@ -250,7 +279,7 @@ export default function CheckoutPage() {
                 prod.discountedPrice !== 0
                   ? prod.discountedPrice
                   : prod.price;
-              const itemTotal = effectivePrice * product.quantity;
+              const itemTotal = product.effectivePrice * product.quantity;
 
               return (
                 <div key={prod._id} className="flex gap-4 mb-5">
@@ -275,7 +304,7 @@ export default function CheckoutPage() {
                       ) : (
                         <span className="text-lg font-bold flex items-center">
                           <IndianRupee className="h-4 w-4" />
-                          {prod.price.toFixed(2)}
+                          {prod.discountedPrice.toFixed(2)}
                         </span>
                       )}
                     </div>
@@ -404,7 +433,7 @@ export default function CheckoutPage() {
               <span>Price ({orderSummary.quantity} item)</span>
               <span className="flex items-center">
                 <IndianRupee className="h-4 w-4" />
-                {orderSummary.originalPrice.toLocaleString()}
+                {orderSummary.total.toLocaleString()}
               </span>
             </div>
 
@@ -466,32 +495,46 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* NEW: Display available public coupons */}
+            {/* Display available public coupons */}
             {publicCoupons.length > 0 && (
               <div className="mt-4">
                 <h3 className="text-lg font-bold mb-2">Available Coupons</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {publicCoupons.map((coupon) => (
-                    <div
-                      key={coupon._id}
-                      className="border border-gray-300 rounded-lg p-4 bg-gray-100 cursor-pointer hover:bg-gray-200"
-                      onClick={() => handleSelectCoupon(coupon)}
-                    >
-                      <div className="font-bold text-gray-800">
-                        {coupon.code}
+                  {publicCoupons.map((coupon) => {
+                    const isEligible =
+                      orderSummary.originalPrice >= coupon.minPurchaseAmount;
+                    return (
+                      <div
+                        key={coupon._id}
+                        className={`border rounded-lg p-4 ${
+                          isEligible
+                            ? "bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                            : "bg-gray-50 opacity-50 cursor-not-allowed"
+                        }`}
+                        onClick={() => isEligible && handleSelectCoupon(coupon)}
+                      >
+                        <div className="font-bold text-gray-800">
+                          {coupon.code}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Discount: {coupon.discount}%
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Min Purchase: ₹{coupon.minPurchaseAmount}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Expires on:{" "}
+                          {new Date(coupon.expiryDate).toLocaleDateString()}
+                        </div>
+                        {!isEligible && (
+                          <div className="text-red-500 text-sm mt-2">
+                            Requires ₹{coupon.minPurchaseAmount} minimum
+                            purchase
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-600">
-                        Discount: {coupon.discount}%
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Min Purchase: ₹{coupon.minPurchaseAmount}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Expires on:{" "}
-                        {new Date(coupon.expiryDate).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -506,9 +549,10 @@ export default function CheckoutPage() {
 
             {orderSummary.originalPrice - orderSummary.total > 0 && (
               <div className="text-green-600 text-sm text-right">
-                You will save{" "}
-                <IndianRupee className="h-3 w-3 inline" />{" "}
-                {(orderSummary.originalPrice - orderSummary.total).toLocaleString()}{" "}
+                You will save <IndianRupee className="h-3 w-3 inline" />{" "}
+                {(
+                  orderSummary.originalPrice - orderSummary.total
+                ).toLocaleString()}{" "}
                 on this order
               </div>
             )}

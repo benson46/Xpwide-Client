@@ -1,5 +1,4 @@
-"use client";
-import { useState, useEffect, useRef } from "react";
+import React,{ useState, useEffect, useRef } from "react";
 import Modal from "../../Modal";
 import PropTypes from "prop-types";
 import { adminAxiosInstance } from "../../../utils/axios";
@@ -9,7 +8,7 @@ export default function EditOfferModal({
   type,
   isOpen,
   onClose,
-  onOfferCreated,
+  onOfferUpdated,
   initialData,
 }) {
   const [formData, setFormData] = useState({
@@ -42,7 +41,7 @@ export default function EditOfferModal({
         selection:
           type === "product"
             ? initialData.product?._id
-            : initialData.category?._id, // Changed to use _id
+            : initialData.category?._id,
         selectionName:
           type === "product"
             ? initialData.product?.name
@@ -61,8 +60,8 @@ export default function EditOfferModal({
         `/offers/products/search?query=${query}`
       );
       setSearchResults(res.data.data);
-    } catch (error) {
-      console.error("Search failed:", error);
+    } catch (err) {
+      console.error("Search failed:", err);
     }
   };
 
@@ -90,11 +89,14 @@ export default function EditOfferModal({
     };
 
     try {
-      await adminAxiosInstance.put(`/offers/${initialData._id}`, offerData);
-      onOfferCreated();
+      // Single API call here
+      const { data } = await adminAxiosInstance.put(`/offers/${initialData._id}`, offerData);
+      // Pass updated offer (with populated product/category) to parent
+      onOfferUpdated(data.offer);
       onClose();
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to update offer");
+    } catch (err) {
+      console.error("Error updating offer : ",err);
+      toast.error(err.response?.data?.error || "Failed to update offer");
     }
   };
 
@@ -232,6 +234,6 @@ EditOfferModal.propTypes = {
   type: PropTypes.string.isRequired,
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  onOfferCreated: PropTypes.func.isRequired,
+  onOfferUpdated: PropTypes.func.isRequired,
   initialData: PropTypes.object.isRequired,
 };

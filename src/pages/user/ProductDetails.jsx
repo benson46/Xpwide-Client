@@ -15,12 +15,12 @@ export default function ProductDetails() {
       hasOffer: false,
       offer: null,
     },
-    price: 0, // Add a default price
-    stock: 0, // Add a default stock
-    images: [], // Add a default images array
-    name: "", // Add a default name
-    brand: {}, // Add a default brand object
-    category: {}, // Add a default category object
+    price: 0,
+    stock: 0,
+    images: [],
+    name: "",
+    brand: {},
+    category: {},
   });
   const [isZoomed, setIsZoomed] = useState(false);
   const navigate = useNavigate();
@@ -66,10 +66,14 @@ export default function ProductDetails() {
             brandId: response.data.product.brand?._id,
             productId,
           },
-          
         });
         setRelatedProducts(relatedProducts.data.products);
-        checkWishlistStatus(response.data.product._id);
+
+        const user = JSON.parse(localStorage.getItem("user"));
+        console.log(user);
+        if (user) {
+          checkWishlistStatus(response.data.product._id);
+        }
       }
     };
     fetchProductDetail();
@@ -290,18 +294,20 @@ export default function ProductDetails() {
                     ADD TO CART
                   </button>
 
-                  <button
-                    onClick={() => handleWishlist(product._id)}
-                    className="py-2 px-5 border rounded flex gap-4 items-center text-gray-700 text-lg font-medium"
-                  >
-                    Wishlist
-                    <HeartIcon
-                      className={
-                        isInWishlist ? "text-yellow-500" : "text-gray-500"
-                      }
-                      fill={isInWishlist ? "yellow" : "none"}
-                    />
-                  </button>
+                  {localStorage.getItem("user") && (
+                    <button
+                      onClick={() => handleWishlist(product._id)}
+                      className="py-2 px-5 border rounded flex gap-4 items-center text-gray-700 text-lg font-medium"
+                    >
+                      Wishlist
+                      <HeartIcon
+                        className={
+                          isInWishlist ? "text-yellow-500" : "text-gray-500"
+                        }
+                        fill={isInWishlist ? "yellow" : "none"}
+                      />
+                    </button>
+                  )}
                 </>
               ) : (
                 <p className="text-red-500 font-bold">Out of Stock</p>
@@ -337,60 +343,61 @@ export default function ProductDetails() {
         </div>
 
         {/* Related Products */}
-<div className="mt-12">
-  <h2 className="text-2xl font-bold mb-6">Related Products</h2>
-  {relatedProducts.length > 0 ? (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {relatedProducts.map((relatedProduct) => (
-        <div
-          key={relatedProduct._id}
-          className="border rounded overflow-hidden"
-        >
-          <div className="aspect-[4/3] relative">
-            <img
-              src={relatedProduct.images[0] || "/placeholder.svg"}
-              alt={relatedProduct.name}
-              className="object-cover w-full h-full"
-            />
-          </div>
-          <div className="p-4">
-            <h3 className="font-semibold">{relatedProduct.name}</h3>
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+          {relatedProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct._id}
+                  className="border rounded overflow-hidden"
+                >
+                  <div className="aspect-[4/3] relative">
+                    <img
+                      src={relatedProduct.images[0] || "/placeholder.svg"}
+                      alt={relatedProduct.name}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold">{relatedProduct.name}</h3>
 
-            {/* Pricing Section */}
-            {relatedProduct.hasOffer ? (
-              <div className="flex items-center gap-4">
-                <p className="text-lg font-bold text-green-600 flex items-center">
-                  <IndianRupee /> {relatedProduct.discountedPrice.toFixed(2)}
-                </p>
-                <p className="text-sm line-through text-gray-500 flex items-center">
-                  <IndianRupee /> {relatedProduct.price.toFixed(2)}
-                </p>
-                {relatedProduct.offer && (
-                  <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
-                    {relatedProduct.offer.value}% OFF
-                  </span>
-                )}
-              </div>
-            ) : (
-              <p className="text-lg font-bold flex items-center">
-                <IndianRupee /> {relatedProduct.price.toFixed(2)}
-              </p>
-            )}
+                    {/* Pricing Section */}
+                    {relatedProduct.hasOffer ? (
+                      <div className="flex items-center gap-4">
+                        <p className="text-lg font-bold text-green-600 flex items-center">
+                          <IndianRupee />{" "}
+                          {relatedProduct.discountedPrice.toFixed(2)}
+                        </p>
+                        <p className="text-sm line-through text-gray-500 flex items-center">
+                          <IndianRupee /> {relatedProduct.price.toFixed(2)}
+                        </p>
+                        {relatedProduct.offer && (
+                          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
+                            {relatedProduct.offer.value}% OFF
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-lg font-bold flex items-center">
+                        <IndianRupee /> {relatedProduct.price.toFixed(2)}
+                      </p>
+                    )}
 
-            <button
-              className="w-full bg-blue-500 text-white p-2 mt-4 rounded"
-              onClick={() => navigate(`/product/${relatedProduct._id}`)}
-            >
-              View Product
-            </button>
-          </div>
+                    <button
+                      className="w-full bg-blue-500 text-white p-2 mt-4 rounded"
+                      onClick={() => navigate(`/product/${relatedProduct._id}`)}
+                    >
+                      View Product
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No related products found.</p>
+          )}
         </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-gray-500">No related products found.</p>
-  )}
-</div>
 
         {isModalOpen && product?.images && (
           <ImageModal

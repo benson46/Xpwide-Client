@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Sidebar from "../../components/admin/Sidebar";
 import Navbar from "../../components/admin/Navbar";
 import { adminAxiosInstance } from "../../utils/axios";
+import { useDispatch, useSelector } from "react-redux";
+import { adminLogout } from "../../store/adminSlice";
 
 export default function Dashboard() {
   const [startDate, setStartDate] = useState(null);
@@ -12,6 +14,14 @@ export default function Dashboard() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const admin = useSelector((state) => state.admin)
+const dispatch = useDispatch();
+  useEffect(()=>{
+    if(!admin){
+      dispatch(adminLogout())
+    }
+  })
 
   const fetchSalesReport = async () => {
     try {
@@ -25,9 +35,9 @@ export default function Dashboard() {
         },
       });
       setReportData(response.data.data);
-    } catch (error) {
+    } catch (err) {
       setError("Failed to fetch sales report. Please try again.");
-      console.error("Error fetching sales report:", error);
+      console.error("Error fetching sales report:", err);
     } finally {
       setLoading(false);
     }
@@ -57,9 +67,9 @@ export default function Dashboard() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch (err) {
       setError(`Failed to download ${type.toUpperCase()} report. Please try again.`);
-      console.error(`Error downloading ${type} report:`, error);
+      console.error(`Error downloading ${type} report:`, err);
     } finally {
       setLoading(false);
     }
@@ -146,14 +156,14 @@ export default function Dashboard() {
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Amount</h3>
                   <p className="text-2xl font-bold">
-                    ${reportData.summary.totalAmount.toFixed(2)}
+                  ₹{reportData.summary.totalAmount}
                   </p>
                 </div>
                 
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Discount</h3>
                   <p className="text-2xl font-bold">
-                    ${reportData.summary.totalDiscount.toFixed(2)}
+                  ₹{reportData.summary.totalDiscount}
                   </p>
                 </div>
               </div>
@@ -202,10 +212,11 @@ export default function Dashboard() {
                         <tr key={sale.orderId} className="border-b border-gray-700 hover:bg-gray-700">
                           <td className="py-3 px-4">
                             {new Date(sale.orderDate).toLocaleDateString()}
+                            {console.log(sale)}
                           </td>
                           <td className="py-3 px-4">{`${sale.customer.firstName}`}</td>
                           <td className="py-3 px-4">{sale.product.length}</td>
-                          <td className="py-3 px-4">${sale.finalAmount.toFixed(2)}</td>
+                          <td className="py-3 px-4">₹{sale.finalAmount.toFixed(2)}</td>
                           <td className="py-3 px-4">{sale.paymentMethod}</td>
                           <td className="py-3 px-4">
                             <span className={`px-2 py-1 rounded text-sm ${

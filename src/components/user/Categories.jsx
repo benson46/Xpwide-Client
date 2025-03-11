@@ -16,9 +16,9 @@ export default function Categories() {
         categoryData = categoryData.filter(category => !category.isBlocked);
   
         setCategories([{ _id: "0001", title: "All Products", icon: "🌟" }, ...categoryData]);
-      }  catch (error) {
-        toast.error(`Failed to fetch categories: ${error}`);
-        console.error(error);
+      }  catch (err) {
+        toast.error(`Failed to fetch categories: ${err}`);
+        console.error(err);
       } finally {
         setLoading(false);
       }

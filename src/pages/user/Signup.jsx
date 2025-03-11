@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import validate from "../../utils/validate";
@@ -17,6 +16,7 @@ export default function Signup() {
     phoneNumber: "",
     password: "",
     confirmPassword: "",
+    referralCode: "", // New field for referral code
   });
 
   const handleSubmit = async (event) => {
@@ -34,6 +34,7 @@ export default function Signup() {
     }
 
     try {
+      // Include referralCode in the payload
       await axiosInstance.post("/send-otp", { formData });
       navigate("/otp-verification", {
         state: { email: formData.email, from: "signup" },
@@ -69,6 +70,7 @@ export default function Signup() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* First Name */}
           <div>
             <label
               htmlFor="firstName"
@@ -89,6 +91,7 @@ export default function Signup() {
             />
           </div>
 
+          {/* Last Name */}
           <div>
             <label
               htmlFor="lastName"
@@ -109,6 +112,7 @@ export default function Signup() {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label
               htmlFor="email"
@@ -129,6 +133,7 @@ export default function Signup() {
             />
           </div>
 
+          {/* Phone Number */}
           <div>
             <label
               htmlFor="phoneNumber"
@@ -149,6 +154,7 @@ export default function Signup() {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label
               htmlFor="password"
@@ -169,12 +175,13 @@ export default function Signup() {
             />
           </div>
 
+          {/* Confirm Password */}
           <div>
             <label
               htmlFor="confirmPassword"
               className="block text-sm font-medium text-gray-700"
             >
-              Confirm password
+              Confirm Password
             </label>
             {validateError.confirmPassword && (
               <p className="text-red-600 text-sm">
@@ -191,6 +198,28 @@ export default function Signup() {
             />
           </div>
 
+          {/* Referral Code */}
+          <div>
+            <label
+              htmlFor="referralCode"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Referral Code (Optional)
+            </label>
+            {validateError.referralCode && (
+              <p className="text-red-600 text-sm">{validateError.referralCode}</p>
+            )}
+            <input
+              type="text"
+              id="referralCode"
+              name="referralCode"
+              value={formData.referralCode}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
             className={`w-full text-white rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 ${
