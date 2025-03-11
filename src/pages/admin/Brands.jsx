@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { useEffect, useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import Sidebar from "../../components/admin/Sidebar";
 import Navbar from "../../components/admin/Navbar";
-import AddBrandModal from "../../components/admin/brandModal/AddBrandMoal";
-import EditBrandModal from "../../components/admin/brandModal/EditBrandModal"; // Import the edit modal
+import AddBrandModal from "../../components/admin/brandModal/AddBrandModal";
+import EditBrandModal from "../../components/admin/brandModal/EditBrandModal";
 import toast from "react-hot-toast";
 import { adminAxiosInstance } from "../../utils/axios";
 import Table from "../../components/ui/admin/Table";
 import ConfirmModal from "../../components/admin/ConfirmModal";
+import { debounce } from "lodash";
 
 export default function Brands() {
   const [isAddBrandModalOpen, setIsAddBrandModalOpen] = useState(false);
@@ -19,7 +20,9 @@ export default function Brands() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalBrands, setTotalBrands] = useState(0);
-  const itemsPerPage = 10;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const itemsPerPage = 5;
 
   // Confirmation modal state for toggling status
   const [confirmModal, setConfirmModal] = useState({
@@ -30,6 +33,37 @@ export default function Brands() {
     onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
   });
 
+  const searchBrand = useCallback(async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const response = await adminAxiosInstance.get("/brand/search", {
+        params: { query: query.trim() },
+      });
+      setSearchResults(response.data.data);
+    } catch (error) {
+      toast.error("Failed to search brand");
+      console.error("Search Error : ", error);
+    }
+  }, []);
+
+  const debouncedSearch = useMemo(
+    () => debounce(searchBrand, 500),
+    [searchBrand]
+  );
+
+  // Add search effect
+  useEffect(() => {
+    if (searchQuery) {
+      debouncedSearch(searchQuery);
+    } else {
+      setSearchResults([]);
+    }
+    return () => debouncedSearch.cancel();
+  }, [searchQuery, debouncedSearch]);
+
   const fetchBrand = async () => {
     try {
       const response = await adminAxiosInstance.get("/brands", {
@@ -37,8 +71,8 @@ export default function Brands() {
       });
       setBrands(response.data.brands);
       setTotalBrands(response.data.totalBrands);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("Error fetching brand : ", err);
       toast.error("Failed to fetch brands.");
     } finally {
       setLoading(false);
@@ -46,8 +80,10 @@ export default function Brands() {
   };
 
   useEffect(() => {
+    if (searchResults.length > 0) return;
+    setLoading(true);
     fetchBrand();
-  }, [currentPage]);
+  }, [currentPage,searchResults.length]);
 
   const handleAddBrand = async (formData) => {
     try {
@@ -59,53 +95,75 @@ export default function Brands() {
         return;
       }
 
-      await adminAxiosInstance.post("/brands", formData);
-      toast.success("Brand added successfully!");
-      fetchBrand();
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error adding brand.");
+      const response = await adminAxiosInstance.post("/brands", formData);
+      if (response.data.success) {
+        toast.success("Brand added successfully!");
+        setBrands((prevBrands) => [...prevBrands, response.data.brand]);
+        setTotalBrands((prevTotal) => prevTotal + 1);
+      } else {
+        toast.error(response.data.message || "Error adding brand.");
+      }
+    } catch (err) {
+      console.error("Error adding new brand : ", err);
+      toast.error(err.response?.data?.message || "Error adding brand.");
     }
   };
 
   const handleEditBrand = async (updatedBrand) => {
     try {
-      if (updatedBrand) {
-        const isBrandExist = brands.some((brand) => {
-          return (
-            brand.title.toLowerCase() === updatedBrand.title.toLowerCase() &&
-            brand._id !== updatedBrand._id
-          );
-        });
-
-        if (isBrandExist) {
-          toast.error("Brand should be unique");
-          return;
-        }
-
-        await adminAxiosInstance.put(
-          `/brands/${updatedBrand._id}`,
-          updatedBrand
+      const isBrandExist = brands.some((brand) => {
+        return (
+          brand.title.toLowerCase() === updatedBrand.title.toLowerCase() &&
+          brand._id !== updatedBrand._id
         );
-        fetchBrand();
+      });
+
+      if (isBrandExist) {
+        toast.error("Brand should be unique");
+        return;
+      }
+
+      console.log(updatedBrand);
+      const response = await adminAxiosInstance.put(
+        `/brands/${updatedBrand._id}`,
+        updatedBrand
+      );
+
+      console.log(response);
+      if (response.data.success) {
+        setBrands((prevBrands) =>
+          prevBrands.map((brand) =>
+            brand._id === updatedBrand._id ? updatedBrand : brand
+          )
+        );
         toast.success("Brand updated successfully!");
       } else {
-        toast.error("Brand is unlisted");
+        toast.error(response.data.message || "Error updating brand.");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error updating brand.");
+    } catch (err) {
+      console.error("Error updating brand : ", err);
+      toast.error(err.response?.data?.message || "Error updating brand.");
     }
   };
 
   // Original function to update status
   const toggleStatus = async (id) => {
     try {
-      await adminAxiosInstance.patch("/brands", { brandId: id });
-      fetchBrand();
-      toast.success("Status updated successfully!");
-    } catch (error) {
-      console.error(error);
+      const response = await adminAxiosInstance.patch("/brands", {
+        brandId: id,
+      });
+      if (response.data.success) {
+        setBrands((prevBrands) =>
+          prevBrands.map((brand) =>
+            brand._id === id ? { ...brand, isBlocked: !brand.isBlocked } : brand
+          )
+        );
+        toast.success("Status updated successfully!");
+      } else {
+        toast.error("Failed to update status.");
+      }
+    } catch (err) {
+      console.error("Error listing or unlisting brand : ", err);
       toast.error("Failed to update status.");
     }
   };
@@ -122,8 +180,7 @@ export default function Brands() {
         await toggleStatus(brand._id);
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
       },
-      onCancel: () =>
-        setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+      onCancel: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
     });
   };
 
@@ -184,31 +241,50 @@ export default function Brands() {
     <div className="min-h-screen bg-black text-white">
       <Navbar toggleSidebar={toggleSidebar} />
 
-      <div className="flex">
-        <Sidebar activePage="Brands" isCollapsed={isCollapsed} />
+      <div className="flex flex-row">
+        <div className="sm:block">
+          <Sidebar activePage="Brands" isCollapsed={isCollapsed} />
+        </div>
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl sm:text-2xl font-semibold">BRANDS</h1>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search categories..."
+                className="p-2 rounded bg-gray-800 text-white outline-none w-64"
+              />
+              <button
+                onClick={() => setIsAddBrandModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+                Add Brand
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setIsAddBrandModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black rounded-md hover:bg-yellow-600 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            Add Brand
-          </button>
           {/* Table Container */}
-          <Table
-            headers={tableHeaders}
-            rows={brands}
-            loading={loading}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalBrands}
-            onPageChange={handlePageChange}
-            renderRow={(brand) => renderUserRow(brand)}
-          />
+          {!loading && totalBrands === 0 ? (
+            <div className="text-center py-10 text-gray-400">
+              No brands till now
+            </div>
+          ) : (
+            <Table
+              headers={tableHeaders}
+              rows={searchQuery ? searchResults : brands}
+              loading={loading}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={
+                searchResults > 0 ? searchResults.length : totalBrands
+              }
+              onPageChange={handlePageChange}
+              renderRow={(brand) => renderUserRow(brand)}
+            />
+          )}
         </main>
       </div>
       <AddBrandModal

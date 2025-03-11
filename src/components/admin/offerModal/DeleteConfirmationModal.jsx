@@ -1,13 +1,20 @@
+import React from "react";
 import Modal from "../../Modal";
 import PropTypes from "prop-types";
 
-export default function DeleteConfirmationModal({ isOpen, onClose, onConfirm, offerName }) {
+export default function DeleteConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  offerName,
+}) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Delete Offer">
       <div className="space-y-4">
         <p className="text-white">
-          Are you sure you want to delete the offer "{offerName}"?
+          {`Are you sure you want to delete the offer "${offerName}"?`}
         </p>
+
         <div className="flex justify-end gap-2">
           <button
             type="button"

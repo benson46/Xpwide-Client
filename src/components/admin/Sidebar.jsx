@@ -1,6 +1,4 @@
-"use client";
-
-import { memo } from "react";
+import React,{ memo } from "react";
 import PropTypes from "prop-types";
 import {
   LayoutGrid,
@@ -36,7 +34,7 @@ const Sidebar = ({ activePage, isCollapsed }) => {
 
   return (
     <aside
-      className={`w-full sm:w-[${isCollapsed ? "4rem" : "16rem"}] min-h-[calc(100vh-73px)] bg-black border-r border-gray-800 transition-all duration-300 ease-in-out overflow-hidden`}
+      className={` sm:w-[${isCollapsed ? "4rem" : "16rem"}] min-h-[calc(100vh-73px)] bg-black border-r border-gray-800 transition-all duration-300 ease-in-out overflow-hidden`}
     >
       <nav className="p-4">
         <ul className="space-y-2">

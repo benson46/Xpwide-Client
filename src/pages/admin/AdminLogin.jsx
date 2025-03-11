@@ -1,5 +1,4 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { adminLogin } from "../../store/adminSlice";
 import { useNavigate } from "react-router-dom";
@@ -13,19 +12,34 @@ export default function AdminLogin() {
     password: "",
   });
 
+  const [errors, setErrors] = useState({ email: "", password: "" });
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required.";
+    }
+    if (!formData.password) {
+      newErrors.password = "Password is required.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    try {
+    if (validateForm()) {
       dispatch(adminLogin(formData))
         .unwrap()
         .then(() => {
-          toast.success("Login success");
           navigate("/admin/dashboard");
+        })
+        .catch((err) => {
+          toast.error(err);
         });
-    } catch (error) {
-      toast.error(error)
     }
   };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,21 +47,12 @@ export default function AdminLogin() {
       ...prev,
       [name]: value,
     }));
+    // Clear errors for the specific field when the user types
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-      {/* Logo */}
-      {/* <div className="mb-8">
-        <Image 
-          src="/placeholder.svg"
-          alt="XPWide Logo"
-          width={150}
-          height={60}
-          className="h-15 w-auto"
-        />
-      </div> */}
-
       <div className="w-full max-w-md">
         <form
           onSubmit={handleSubmit}
@@ -72,8 +77,10 @@ export default function AdminLogin() {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
-                required
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -87,8 +94,10 @@ export default function AdminLogin() {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
-                required
               />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
           </div>
 

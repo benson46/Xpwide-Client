@@ -46,14 +46,21 @@ export default function Login() {
 
   const responseMessage = async (response) => {
     try {
-      dispatch(googleLogin(response.credential)).then(() => {
-        navigate("/");
-      });
-      toast.success("Login successful!");
+      await dispatch(googleLogin(response.credential))
+        .unwrap() 
+        .then(() => {
+          navigate("/");
+        })
+        .catch((error) => {
+          toast.error(error || "Google login failed.");
+        });
     } catch (error) {
-      toast.error(error.response.data.message);
+      // Handle unexpected errors from dispatch
+      toast.error(error.message || "An unexpected error occurred.");
+      console.error("Error during Google login:", error);
     }
   };
+  
 
   const errorMessage = (error) => {
     toast.error(`Google login failed: ${error}`);

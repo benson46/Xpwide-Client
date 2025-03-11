@@ -16,8 +16,8 @@ export default function CategorySidebar({ currentCategory }) {
         let categoryData = response.data.categories;
         categoryData = categoryData.filter(category => !category.isBlocked);
         setCategories(categoryData);
-      } catch (error) {
-        console.error("Error fetching categories", error);
+      } catch (err) {
+        console.error("Error fetching categories", err);
       }
     };
 

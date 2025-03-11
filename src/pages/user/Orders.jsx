@@ -1,6 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../utils/axios";
+import toast from "react-hot-toast";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { showCustomAlert } from "./customAlert";
 import store from "../store/store";
-import { logoutAdmin } from "../store/adminSlice";
+import { adminLogout} from "../store/adminSlice";
 import { logout } from "../store/userSlice";
 import toast from "react-hot-toast";
 // Create Axios instance
@@ -12,25 +12,7 @@ export const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (user) {
-      const { email, accessToken } = user;
-
-      // Add Authorization header if accessToken exists
-      if (accessToken) {
-        config.headers["Authorization"] = `Bearer ${accessToken}`;
-      }
-
-      // Add User-Email header if email exists
-      if (email) {
-        config.headers["User-Email"] = email;
-      } else {
-        console.warn("User email not found in localStorage");
-      }
-    }
-
-    return config; // Proceed with the request
+    return config;
   },
   (error) => {
     console.error("Request error:", error);
@@ -46,21 +28,11 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true; // Mark the request as retried
 
       try {
-        // Attempt to refresh the token
-        const resultAction = await axiosInstance.post("/refresh-token");
-        const user = JSON.parse(localStorage.getItem("user"));
-
-        if (user) {
-          user.accessToken = resultAction.data.accessToken;
-          localStorage.setItem("user", JSON.stringify(user));
-        }
-
-        // Retry the original request with the new token
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
         store.dispatch(logout());
-        return Promise.reject(refreshError);
+        localStorage.removeItem('user')
+        window.location.href = "/login"
+      } catch (logoutError) {
+        console.error("Failed to logout after 401 error",logoutError)
       }
     }
 
@@ -87,10 +59,6 @@ export const adminAxiosInstance = axios.create({
   withCredentials: true,
 });
 
-export const googleAxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_GOOGLE_USER_API_BASE_URL,
-  withCredentials: true,
-});
 
 adminAxiosInstance.interceptors.request.use(
   (config) => {
@@ -98,13 +66,34 @@ adminAxiosInstance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 adminAxiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => response, // Pass the response as is if no error
   async (error) => {
-    if (error.response.status === 401) {
-      store.dispatch(logoutAdmin());
+    const originalRequest = error.config;
+
+    // If the error is due to unauthorized access (401) and not retried
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Mark the request as retried to prevent an infinite loop
+
+      try {
+        // Dispatch the logout action to clear admin info and logout
+        store.dispatch(adminLogout());
+        localStorage.removeItem('adminInfo')
+
+        // Optionally, redirect to the login page (if using react-router-dom)
+        window.location.href = "/admin";
+      } catch (logoutError) {
+        console.error("Failed to logout after 401 error:", logoutError);
+      }
     }
+
+    // Reject the promise with the error
     return Promise.reject(error);
   }
 );
+
+
+export const googleAxiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_GOOGLE_USER_API_BASE_URL,
+  withCredentials: true,
+});

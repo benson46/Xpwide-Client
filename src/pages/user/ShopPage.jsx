@@ -43,8 +43,6 @@ export default function ShopPage() {
           return a.price - b.price;
         case "price-high":
           return b.price - a.price;
-        case "rating":
-          return b.rating - a.rating;
         case "newest":
           return new Date(b.createdAt) - new Date(a.createdAt);
         case "a-z":
@@ -87,7 +85,6 @@ export default function ShopPage() {
               <option value="featured">Featured</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
-              <option value="rating">Rating</option>
               <option value="newest">Newest</option>
               <option value="a-z">A-Z</option>
               <option value="z-a">Z-A</option>

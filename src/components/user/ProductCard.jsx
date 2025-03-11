@@ -4,15 +4,18 @@ import PropTypes from 'prop-types';
 const ProductCard = ({
   _id,
   name,
-  price,
-  images,
+  price = 0, // default to 0 if not provided
+  images = [],
   onClick,
-  hasOffer,        
-  discountedPrice,  
-  offer,            
-  stock,           
+  hasOffer = false,        
+  discountedPrice,  // no default here so that we can check if it's provided
+  offer = null,            
+  stock = 0,           
 }) => {
-  const effectiveDiscountedPrice = hasOffer && discountedPrice ? discountedPrice : price;
+  // If the product has an offer and a discountedPrice is provided, use it.
+  // Otherwise, fallback to the original price.
+  const effectiveDiscountedPrice =
+    hasOffer && typeof discountedPrice === 'number' ? discountedPrice : price;
 
   return (
     <div className="relative group cursor-pointer" onClick={() => onClick(_id)}>
@@ -28,7 +31,7 @@ const ProductCard = ({
             {offer.value}% OFF
           </div>
         )}
-        {/* Out-of-stock overlay (keep unchanged) */}
+        {/* Out-of-stock overlay */}
         {stock <= 0 && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="text-white font-bold text-lg">Out of Stock</span>

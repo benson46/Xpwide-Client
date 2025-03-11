@@ -1,5 +1,5 @@
-"use client";
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import PropTypes from "prop-types";
 import { adminAxiosInstance } from "../../../utils/axios";
 import { Pencil, Trash } from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
@@ -7,38 +7,21 @@ import EditOfferModal from "./EditOfferModal";
 import toast from "react-hot-toast";
 import Table from "../../ui/admin/Table";
 
-export default function CategoryOffers() {
-  const [offers, setOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function CategoryOffers({
+  offers,
+  onUpdate,
+  onDelete,
+  totalCategoryOffers,
+}) {
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  useEffect(() => {
-    fetchOffers();
-  }, [currentPage]);
-
-  const fetchOffers = async () => {
-    try {
-      const res = await adminAxiosInstance.get("/offers/getoffers?type=category", {
-        params: { page: currentPage, limit: itemsPerPage },
-      });
-      setOffers(res.data.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-
-  if (error) return <div className="text-red-500">{error}</div>;
 
   const tableHeaders = [
     { key: "name", label: "OFFER NAME" },
@@ -81,16 +64,21 @@ export default function CategoryOffers() {
 
   return (
     <div className="bg-black rounded-lg shadow p-6">
-      <Table
-        headers={tableHeaders}
-        rows={offers}
-        loading={loading}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={offers.length} // Replace with real total if available
-        onPageChange={handlePageChange}
-        renderRow={renderUserRow}
-      />
+      {totalCategoryOffers === 0 ? (
+        <div className="text-center py-10 text-gray-400">
+          No Category offers till now
+        </div>
+      ) : (
+        <Table
+          headers={tableHeaders}
+          rows={offers}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalCategoryOffers}
+          onPageChange={handlePageChange}
+          renderRow={renderUserRow}
+        />
+      )}
 
       {selectedOffer && (
         <>
@@ -101,7 +89,11 @@ export default function CategoryOffers() {
               setIsEditModalOpen(false);
               setSelectedOffer(null);
             }}
-            onOfferCreated={fetchOffers}
+            onOfferUpdated={(updatedOffer) => {
+              onUpdate(updatedOffer);
+              setIsEditModalOpen(false);
+              setSelectedOffer(null);
+            }}
             initialData={selectedOffer}
           />
 
@@ -114,7 +106,7 @@ export default function CategoryOffers() {
             onConfirm={async () => {
               try {
                 await adminAxiosInstance.delete(`/offers/${selectedOffer._id}`);
-                fetchOffers();
+                onDelete(selectedOffer._id);
                 setIsDeleteModalOpen(false);
                 setSelectedOffer(null);
               } catch (err) {
@@ -128,3 +120,23 @@ export default function CategoryOffers() {
     </div>
   );
 }
+
+CategoryOffers.propTypes = {
+  offers: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      category: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.shape({
+          title: PropTypes.string,
+        }),
+      ]),
+      value: PropTypes.number.isRequired,
+      endDate: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  totalCategoryOffers:PropTypes.number.isRequired
+};

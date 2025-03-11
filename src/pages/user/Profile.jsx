@@ -20,6 +20,7 @@ export default function Profile() {
     lastName: "",
     email: "",
     phoneNumber: "",
+    referralCode:"",
   });
   const user = useSelector((state) => state.user?.user);
   const googleUser = useSelector((state) => state?.user?.user?.googleUser);
@@ -48,6 +49,7 @@ export default function Profile() {
             lastName: userData.lastName || "",
             email: userData.email || "",
             phoneNumber: userData.phoneNumber || "",
+            referralCode: userData.uniqueReferralCode || "",
           });
         }
       } catch (error) {
@@ -164,6 +166,11 @@ export default function Profile() {
     }));
   };
 
+  const handleCopyReferralCode = () => {
+    navigator.clipboard.writeText(formData.referralCode);
+    toast.success("Referral code copied to clipboard!");
+  };
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -175,26 +182,29 @@ export default function Profile() {
             </p>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
-                {Object.entries(formData).map(([key, value]) => (
+              {Object.entries(formData).map(([key, value]) => (
                   <div key={key} className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       {key.charAt(0).toUpperCase() +
                         key.slice(1).replace(/([A-Z])/g, " $1")}
                     </label>
                     <input
-                      type={
-                        key === "email"
-                          ? "email"
-                          : key === "phoneNumber"
-                          ? "tel"
-                          : "text"
-                      }
+                      type={key === "email" ? "email" : key === "phoneNumber" ? "tel" : "text"}
                       name={key}
                       value={value}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border rounded-md hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      disabled={key === "email"} // Disable editing email
+                      disabled={key === "email" || key === "referralCode"} // Disable editing email and referral code
                     />
+                    {key === "referralCode" && (
+                      <button
+                        type="button"
+                        onClick={handleCopyReferralCode}
+                        className="absolute right-2 top-9 px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                      >
+                        Copy
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

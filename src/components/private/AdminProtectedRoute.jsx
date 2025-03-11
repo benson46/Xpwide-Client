@@ -7,12 +7,13 @@ export const AdminAuth = ({ children }) => {
   const { adminInfo } = useSelector((state) => state.admin);
 
   useEffect(() => {
-    console.log("AdminAuth Status:", adminInfo);
+    console.log("Admin info in local storage:", adminInfo);
   }, [adminInfo]);
 
   if (!adminInfo) {
     return <Navigate to="/admin" />;
-  } else {
+  }
+   else {
     return <>{children}</>;
   }
 };

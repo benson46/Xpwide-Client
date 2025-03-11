@@ -14,11 +14,7 @@ export default function Cart() {
     const fetchCart = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get("/cart", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const response = await axiosInstance.get("/cart");
 
         const cartProducts = response.data.items;
         if (cartProducts && cartProducts.length > 0) {
@@ -57,45 +53,46 @@ export default function Cart() {
 
   const updateQuantity = async (id, change) => {
     try {
-      // Find the product in current state
       const product = products.find((product) => product.id === id);
       if (!product) return;
+      
       const newQuantity = product.quantity + change;
       if (newQuantity < 1 || newQuantity > product.stock || newQuantity > 5) return;
-
-      // API call to update quantity
-      const response = await axiosInstance.patch(
-        "/cart",
-        { productId: id, quantity: newQuantity },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-      );
-
+  
+      const response = await axiosInstance.patch("/cart", { productId: id, quantity: newQuantity });
+  
       if (response.data.success) {
-        // Update local state only if API call was successful
+        const updatedStock = response.data.productStock; // Get latest stock from backend
+  
         setProducts((prevProducts) => {
-          const updated = prevProducts.map((p) =>
-            p.id === id ? { ...p, quantity: newQuantity } : p
-          );
-          const newSubtotal = updated.reduce(
+          const updatedProducts = prevProducts.map((p) => {
+            if (p.id === id) {
+              const adjustedQuantity = Math.min(p.quantity + change, updatedStock);
+              return { ...p, quantity: adjustedQuantity, stock: updatedStock };
+            }
+            return p;
+          });
+  
+          const newSubtotal = updatedProducts.reduce(
             (sum, p) => sum + p.price * p.quantity,
             0
           );
           setSubtotal(newSubtotal);
-          return updated;
+          return updatedProducts;
         });
+  
         toast.success(response.data.message);
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
   };
+  
 
   const removeProduct = async (id) => {
     try {
       // Make the API call to remove the product
-      const res = await axiosInstance.delete("/cart", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        data: { productId: id },
+      const res = await axiosInstance.delete("/cart", {data: { productId: id },
       });
 
       if (res.data.success) {
@@ -264,11 +261,9 @@ export default function Cart() {
               </div>
               <button
                 disabled={
-                  products.some(
-                    (product) =>
-                      product.stock === 0 || product.quantity > product.stock
-                  ) || products.length === 0
+                  products.length === 0 || products.some((p) => p.quantity > p.stock)
                 }
+                
                 className={`w-full py-2 rounded transition-colors ${
                   products.length === 0 ||
                   products.some(

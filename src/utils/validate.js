@@ -5,16 +5,18 @@ const validate = (data) => {
   if (data?.firstName) {
     // Name validation (alphabets only, no spaces)
     const firstNameRegex = /^[A-Za-z\s]{3,}$/;
-    if (!data.firstName || !firstNameRegex.test(data.firstName)) {
+    const trimmedFirstName = data.firstName.trim();
+    if (!trimmedFirstName ||!data.firstName || !firstNameRegex.test(data.firstName)) {
       errors.firstName =
-        "Name should only contain alphabets and atleast three alphabets";
+        "Name should only contain alphabets and at least three alphabets";
     }
   }
   if (data?.lastName) {
     const lastNameRegex = /^[A-Za-z\s]{3,}$/;
-    if (!data.lastName || !lastNameRegex.test(data.lastName)) {
+    const trimmedLastName = data.lastName.trim();
+    if (!trimmedLastName || !data.lastName || !lastNameRegex.test(data.lastName)) {
       errors.lastName =
-        "Name should only contain alphabets and atleast three alphabets";
+        "Name should only contain alphabets and at least three alphabets";
     }
   }
 

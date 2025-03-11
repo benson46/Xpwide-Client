@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React,{ useState, useEffect, useRef } from "react";
 import Modal from "../../Modal";
 import PropTypes from "prop-types";
 import { adminAxiosInstance } from "../../../utils/axios";
@@ -40,11 +40,11 @@ export default function AddNewOfferModal({
     }
     try {
       const res = await adminAxiosInstance.get(
-        `/offers/products/search?query=${query}`
+        `/products/search?query=${query}`
       );
       setSearchResults(res.data.data);
-    } catch (error) {
-      console.error("Search failed:", error);
+    } catch (err) {
+      console.error("Search failed:", err);
     }
   };
 
@@ -61,9 +61,8 @@ export default function AddNewOfferModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    ("Validating form data:", formData);
     if (!validateForm()) return;
-
+  
     const offerData = {
       offerType: type,
       name: formData.name,
@@ -71,20 +70,22 @@ export default function AddNewOfferModal({
       endDate: formData.endDate,
       [type]: formData.selection,
     };
-
-
+  
     try {
-      const res = await adminAxiosInstance.post(
-        "/offers/createoffer",
-        offerData
-      );
-      onOfferCreated(res.data.data);
-      onClose();
-    } catch (error) {
-        console.log("Request Error:", error.message);
-        toast.error("An unexpected error occurred.");
+      const res = await adminAxiosInstance.post("/offers/createoffer", offerData);
+      if (res.data.success) {
+        // Update the offers list with the newly created offer from the API response
+        onOfferCreated(res.data.offer);
+        toast.success("Offer created successfully!");
+        onClose();
+      } else {
+        toast.error("Failed to create offer.");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Error on creating offer");
     }
   };
+  
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add New Offer">
@@ -98,7 +99,7 @@ export default function AddNewOfferModal({
             className="w-full p-2 bg-gray-700 text-white rounded"
           />
           {errors.name && <p className="text-red-500">{errors.name}</p>}
-        </div>
+        </div>        
 
         <div className="grid grid-cols-2 gap-4">
           <div>
