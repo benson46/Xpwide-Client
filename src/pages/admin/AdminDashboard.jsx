@@ -163,7 +163,7 @@ const dispatch = useDispatch();
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Discount</h3>
                   <p className="text-2xl font-bold">
-                  ₹{reportData.summary.totalDiscount}
+                  ₹{reportData.summary.totalDiscount.toFixed(2)}
                   </p>
                 </div>
               </div>
