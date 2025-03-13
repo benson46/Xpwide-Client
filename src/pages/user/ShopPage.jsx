@@ -20,7 +20,9 @@ export default function ShopPage() {
           categoryTitle === "all" ? "all" : categoryTitle
         }`;
         const response = await axiosInstance.get(endpoint);
-        setProducts(response.data.products);
+        const filteredProducts = response.data.products.filter(product => !product.isBlocked);
+
+        setProducts(filteredProducts);
       } catch (error) {
         toast.error(
           error.response?.data?.message || "Failed to fetch products"
