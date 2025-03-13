@@ -21,6 +21,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [couponCode, setCouponCode] = useState("");
+  // couponDetails holds the applied coupon object (id, code, discount percentage, etc.)
+  const [couponDetails, setCouponDetails] = useState(null);
   const [products, setProducts] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -32,7 +34,6 @@ export default function CheckoutPage() {
     couponDiscount: 0,
     total: 0,
   });
-
   const [publicCoupons, setPublicCoupons] = useState([]);
 
   // Fetch initial checkout, address, and wallet data
@@ -57,9 +58,9 @@ export default function CheckoutPage() {
         if (addressList.length > 0) {
           setSelectedAddress(addressList[0]._id);
         }
+        // Save the products as returned from the backend
         setProducts(checkoutResponse.data.items || []);
         const summary = checkoutResponse.data;
-        console.log(summary);
         setOrderSummary({
           quantity: summary.totalQuantity || 0,
           originalPrice: summary.originalPrice || 0,
@@ -86,9 +87,6 @@ export default function CheckoutPage() {
       const fetchPublicCoupons = async () => {
         try {
           const response = await axiosInstance.get("/coupon/public");
-          // const eligibleCoupons = response.data.coupons.filter(
-          //   (coupon) => orderSummary.originalPrice >= coupon.minPurchaseAmount
-          // );
           setPublicCoupons(response.data.coupons);
         } catch (error) {
           console.error("Failed to fetch coupons", error);
@@ -96,15 +94,17 @@ export default function CheckoutPage() {
       };
       fetchPublicCoupons();
     }
-  }, [user, orderSummary.originalPrice]); // Add dependency
+  }, [user, orderSummary.originalPrice]);
 
   // Function to populate the coupon code when a public coupon is selected
   const handleSelectCoupon = (coupon) => {
     setCouponCode(coupon.code);
+    // Save coupon details for later use (id, discount percentage, etc.)
+    setCouponDetails(coupon);
     toast.success(`Coupon ${coupon.code} selected. Click apply to use it.`);
   };
 
-  // Handle address submission
+  // Handle address submission (same as before)
   const handleAddressSubmit = async (formData, addressId) => {
     try {
       const isEditing = Boolean(addressId);
@@ -116,16 +116,13 @@ export default function CheckoutPage() {
       if (response.data.success) {
         const newAddress = response.data.savedAddress;
         if (isEditing) {
-          // Update the existing address in state
           setAddresses((prevAddresses) =>
             prevAddresses.map((addr) =>
               addr._id === newAddress._id ? newAddress : addr
             )
           );
         } else {
-          // Add the new address to state and select it
           setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
-          console.log(newAddress);
           setSelectedAddress(newAddress._id);
         }
         toast.success(
@@ -142,7 +139,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // Handle address editing
   const handleEditAddress = (address) => {
     setEditingAddressId(address._id);
   };
@@ -151,33 +147,57 @@ export default function CheckoutPage() {
     setEditingAddressId(null);
   };
 
-  // Handle coupon application
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
       toast.error("Please enter a coupon code");
       return;
     }
-
-    const coupon = publicCoupons.find((c) => c.code === couponCode);
-    if (coupon && orderSummary.originalPrice < coupon.minPurchaseAmount) {
-      toast.error(`Requires ₹${coupon.minPurchaseAmount} minimum purchase`);
+  
+    // If a coupon is applied, verify minimum purchase requirements
+    if (
+      couponDetails &&
+      orderSummary.originalPrice < couponDetails.minPurchaseAmount
+    ) {
+      toast.error(
+        `Requires ₹${couponDetails.minPurchaseAmount} minimum purchase`
+      );
       return;
     }
-
+  
     try {
+      // Send coupon code to backend for verification and to get discountAmount and new total
       const response = await axiosInstance.post("/coupon/apply", {
         code: couponCode,
-        cartTotal: orderSummary.originalPrice,
+        cartTotal: orderSummary.total,
         cartItems: products.map((item) => ({
           productId: item.productId._id,
         })),
       });
-
+  
+      // Update order summary with coupon discount and new total amount
       setOrderSummary((prev) => ({
         ...prev,
         couponDiscount: response.data.discountAmount,
         total: response.data.newTotal,
       }));
+  
+      // Additionally, update each product to include its final price after coupon discount
+      setProducts((prevProducts) =>
+        prevProducts.map((item) => {
+          // Use item-level discountedPrice and hasOffer from the checkout response
+          const effectivePrice =
+            item.hasOffer && item.discountedPrice && item.discountedPrice !== 0
+              ? item.discountedPrice
+              : item.productId.price;
+  
+          // Calculate discounted unit price
+          const finalPrice =
+            effectivePrice * (1 - couponDetails.discount / 100);
+  
+          return { ...item, finalPrice };
+        })
+      );
+  
       toast.success(response.data.message);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to apply coupon");
@@ -187,15 +207,21 @@ export default function CheckoutPage() {
   // Handle coupon removal
   const handleRemoveCoupon = () => {
     setCouponCode("");
+    setCouponDetails(null);
+    // Remove coupon discount from the order summary by adding the coupon discount back
     setOrderSummary((prev) => ({
       ...prev,
+      total: prev.total + prev.couponDiscount,
       couponDiscount: 0,
-      total: prev.originalPrice,
     }));
+    // Revert products to their original effective prices by removing the finalPrice property
+    setProducts((prevProducts) =>
+      prevProducts.map((item) => ({ ...item, finalPrice: undefined }))
+    );
     toast.success("Coupon removed");
   };
 
-  // Handle order placement
+  // Handle order placement with updated payload
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
       toast.error("Please select a delivery address");
@@ -208,18 +234,37 @@ export default function CheckoutPage() {
     }
 
     try {
+      // Prepare the products list to include the discounted unit price (if coupon applied)
+      const orderProducts = products.map((item) => {
+        const prod = item.productId;
+        const effectivePrice =
+          item.finalPrice !== undefined
+            ? item.finalPrice
+            : prod.hasOffer &&
+              prod.discountedPrice &&
+              prod.discountedPrice !== 0
+            ? prod.discountedPrice
+            : prod.price;
+        return {
+          productId: prod._id,
+          quantity: item.quantity,
+          originalPrice:item.productId.price,
+          productPrice: effectivePrice,
+        };
+      });
+
+      // Build the order data payload. Include coupon details if available.
       const orderData = {
         addressId: selectedAddress,
         paymentMethod,
-        products: products.map((item) => ({
-          productId: item.productId._id,
-          quantity: item.quantity,
-        })),
-        totalAmount: orderSummary.total,
-        couponCode: couponCode,
+        products: orderProducts,
+        totalAmount: orderSummary.total, // already adjusted after coupon discount
+        // If a coupon is applied, send its code and id; otherwise, leave them undefined/null
+        couponCode: couponDetails ? couponDetails.code : null,
+        couponId: couponDetails ? couponDetails._id : null,
       };
 
-      // For wallet payments, first handle the wallet transaction
+      // For wallet payments, handle the wallet transaction first
       if (paymentMethod === "Wallet") {
         const res = await axiosInstance.put("/wallet", {
           amount: orderSummary.total,
@@ -230,14 +275,13 @@ export default function CheckoutPage() {
           })),
         });
 
-        // Check if wallet update was successful
         if (!res.data.success) {
           toast.error("Wallet transaction failed");
           return;
         }
       }
 
-      // Proceed with order creation after successful wallet transaction
+      // Proceed with order creation after wallet transaction if applicable
       await axiosInstance.post("/checkout-order-success", orderData);
 
       toast.success("Order placed successfully!");
@@ -245,8 +289,6 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Order placement error:", error);
       toast.error("Failed to place order");
-
-      // Handle specific error case for wallet transactions
       if (paymentMethod === "Wallet") {
         toast.error("Wallet transaction failed. Order was not placed.");
       }
@@ -274,13 +316,14 @@ export default function CheckoutPage() {
             {products.map((product) => {
               const prod = product.productId;
               const effectivePrice =
-                prod.hasOffer &&
-                prod.discountedPrice &&
-                prod.discountedPrice !== 0
-                  ? prod.discountedPrice
+                product.finalPrice !== undefined
+                  ? product.finalPrice
+                  : product.hasOffer &&
+                    product.discountedPrice &&
+                    product.discountedPrice !== 0
+                  ? product.discountedPrice
                   : prod.price;
-              const itemTotal = product.effectivePrice * product.quantity;
-
+              const itemTotal = effectivePrice * product.quantity;
               return (
                 <div key={prod._id} className="flex gap-4 mb-5">
                   <img
@@ -291,22 +334,29 @@ export default function CheckoutPage() {
                   <div className="flex-1">
                     <h3 className="font-medium">{prod.name}</h3>
                     <div className="mt-2 flex items-center gap-2">
-                      {prod.hasOffer ? (
-                        <div className="flex flex-col items-start">
-                          <span className="text-lg font-bold text-green-600 flex items-center">
-                            <IndianRupee className="h-4 w-4" />
-                            {effectivePrice.toFixed(2)}
-                          </span>
-                          <span className="text-sm line-through text-gray-500">
-                            ₹{prod.price.toFixed(2)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-lg font-bold flex items-center">
-                          <IndianRupee className="h-4 w-4" />
-                          {prod.discountedPrice.toFixed(2)}
-                        </span>
-                      )}
+                      <div className="flex flex-col items-start">
+                        {prod.hasOffer ? (
+                          <div className="flex flex-col items-start">
+                            <span className="text-lg font-bold text-green-600 flex items-center">
+                              <IndianRupee className="h-4 w-4" />
+                              {effectivePrice.toFixed(2)}
+                            </span>
+                            <span className="text-sm line-through text-gray-500">
+                              ₹{prod.price.toFixed(2)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-start">
+                            <span className="text-lg font-bold text-green-600 flex items-center">
+                              <IndianRupee className="h-4 w-4" />
+                              {effectivePrice.toFixed(2)}
+                            </span>
+                            <span className="text-sm line-through text-gray-500">
+                              ₹{prod.price.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="mt-1">
                       {prod.stock === 0 ? (
@@ -427,7 +477,6 @@ export default function CheckoutPage() {
         {/* Right Column - Order Summary */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold mb-6">Price Details</h2>
-
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
               <span>Price ({orderSummary.quantity} item)</span>
@@ -436,7 +485,6 @@ export default function CheckoutPage() {
                 {orderSummary.total.toLocaleString()}
               </span>
             </div>
-
             {orderSummary.discountedPrice > 0 && (
               <div className="flex justify-between text-sm">
                 <span>Product Discount</span>
@@ -446,7 +494,6 @@ export default function CheckoutPage() {
                 </span>
               </div>
             )}
-
             <div className="flex justify-between text-sm">
               <span>Delivery Fee</span>
               {orderSummary.deliveryFee === 0 ? (
