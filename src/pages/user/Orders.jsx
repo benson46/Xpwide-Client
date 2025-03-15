@@ -136,23 +136,21 @@ export default function Orders() {
               <th className="text-center py-4 px-4">QUANTITY</th>
               <th className="text-center py-4 px-4">PRICE</th>
               <th className="text-center py-4 px-4">STATUS</th>
+              <th className="text-center py-4 px-4">PAYMENT METHOD</th>
               <th className="text-center py-4 px-4">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-6">
+                <td colSpan="6" className="text-center py-6">
                   <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </td>
               </tr>
             ) : (
               orders.map((order) =>
                 order.products.map((product, productIndex) => (
-                  <tr
-                    key={`${order._id}-${product._id || productIndex}`}
-                    className="border-b"
-                  >
+                  <tr key={`${order._id}-${product._id || productIndex}`} className="border-b">
                     <td className="py-4 px-4">
                       <div className="flex items-start space-x-4">
                         <img
@@ -162,58 +160,31 @@ export default function Orders() {
                         />
                         <div>
                           <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {product.category}
-                          </p>
+                          <p className="text-sm text-gray-600">{product.category}</p>
                         </div>
                       </div>
                     </td>
+                    <td className="text-center py-4 px-4">{product.quantity}</td>
+                    <td className="text-center py-4 px-4">₹{(product.price * product.quantity).toFixed(2)}</td>
                     <td className="text-center py-4 px-4">
-                      {product.quantity}
+                      <span className={getStatusColor(product.status)}>{product.status}</span>
                     </td>
-                    <td className="text-center py-4 px-4">
-                      ₹{product.price * product.quantity}
-                    </td>
-                    <td className="text-center py-4 px-4">
-                      <span className={getStatusColor(product.status)}>
-                        {product.status}
-                      </span>
-                    </td>
+                    <td className="text-center py-4 px-4">{order.paymentMethod}</td> {/* Added Payment Method */}
                     <td className="text-center py-4 px-4 flex flex-col space-y-2">
-                      <button
-                        onClick={() => openModal(order)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
+                      <button onClick={() => openModal(order)} className="bg-blue-500 text-white px-3 py-1 rounded">
                         VIEW
                       </button>
-                      {/* {product.status !== "Cancelled" &&
-                         && (
-                          <button
-                            onClick={() => cancelOrder(order._id, product._id)}
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
-                            CANCEL
-                          </button>
-                        )} */}
-                      {product.status === "Delivered" &&
-                        canReturnOrder(product) && (
-                          <button
-                            onClick={() => returnOrder(order._id, product._id)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded"
-                          >
-                            RETURN
-                          </button>
-                        )}
-                      {/* Disable cancel button if the product status is "Return Pending" */}
+                      {product.status === "Delivered" && canReturnOrder(product) && (
+                        <button onClick={() => returnOrder(order._id, product._id)} className="bg-yellow-500 text-white px-3 py-1 rounded">
+                          RETURN
+                        </button>
+                      )}
                       {product.status !== "Return Pending" &&
                         product.status !== "Return Rejected" &&
                         product.status !== "Return Approved" &&
                         product.status !== "Cancelled" &&
                         product.status !== "Delivered" && (
-                          <button
-                            onClick={() => cancelOrder(order._id, product._id)}
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
+                          <button onClick={() => cancelOrder(order._id, product._id)} className="bg-red-500 text-white px-3 py-1 rounded">
                             CANCEL
                           </button>
                         )}
@@ -225,72 +196,39 @@ export default function Orders() {
           </tbody>
         </table>
       </div>
-
+  
+      {/* Modal for order details */}
       {selectedOrder && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h2 className="text-xl font-bold mb-4">Order Details</h2>
-
-            {selectedOrder.addressId &&
-              (() => {
-                const { address, locality, city, state, pincode, name } =
-                  selectedOrder.addressId;
-
-                return (
-                  <>
-                    <p>
-                      <strong>Order ID:</strong> {selectedOrder._id}
-                    </p>
-                    <p>
-                      <strong>Customer Name:</strong> {name}
-                    </p>
-                    <p>
-                      <strong>Product:</strong>
-                    </p>
-                    <ul className="list-disc ml-5 mb-2">
-                      {selectedOrder.products.map((product, index) => (
-                        <li key={index}>
-                          {product.name} - {product.quantity}
-                        </li>
-                      ))}
-                    </ul>
-                    <p>
-                      <strong>Address:</strong>{" "}
-                      {`${address}, ${locality}, ${city}, ${state} - ${pincode}`}
-                    </p>
-                    <p>
-                      <strong>Total:</strong> ₹{selectedOrder.totalAmount}
-                    </p>
-                    <p>
-                      <strong>Booked Date:</strong>{" "}
-                      {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                    </p>
-                    {selectedOrder.products.some(
-                      (product) =>
-                        product.status === "Delivered" && product.deliveryDate
-                    ) && (
-                      <p>
-                        <strong>Delivered Date:</strong>{" "}
-                        {new Date(
-                          selectedOrder.products.find(
-                            (product) => product.status === "Delivered"
-                          ).deliveryDate
-                        ).toLocaleDateString()}
-                      </p>
-                    )}
-                  </>
-                );
-              })()}
-
-            <button
-              onClick={closeModal}
-              className="bg-red-500 text-white px-4 py-2 rounded mt-4"
-            >
-              Close
-            </button>
+            {selectedOrder.addressId && (() => {
+              const { address, locality, city, state, pincode, name } = selectedOrder.addressId;
+              return (
+                <>
+                  <p><strong>Order ID:</strong> {selectedOrder._id}</p>
+                  <p><strong>Customer Name:</strong> {name}</p>
+                  <p><strong>Product:</strong></p>
+                  <ul className="list-disc ml-5 mb-2">
+                    {selectedOrder.products.map((product, index) => (
+                      <li key={index}>{product.name} - {product.quantity}</li>
+                    ))}
+                  </ul>
+                  <p><strong>Address:</strong> {`${address}, ${locality}, ${city}, ${state} - ${pincode}`}</p>
+                  <p><strong>Total:</strong> ₹{selectedOrder.totalAmount}</p>
+                  <p><strong>Payment Method:</strong> {selectedOrder.paymentMethod}</p> {/* Added Payment Method */}
+                  <p><strong>Booked Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                  {selectedOrder.products.some((product) => product.status === "Delivered" && product.deliveryDate) && (
+                    <p><strong>Delivered Date:</strong> {new Date(selectedOrder.products.find((product) => product.status === "Delivered").deliveryDate).toLocaleDateString()}</p>
+                  )}
+                </>
+              );
+            })()}
+            <button onClick={closeModal} className="bg-red-500 text-white px-4 py-2 rounded mt-4">Close</button>
           </div>
         </div>
       )}
     </div>
   );
+  
 }
