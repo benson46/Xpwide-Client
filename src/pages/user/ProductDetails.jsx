@@ -63,7 +63,6 @@ export default function ProductDetails() {
         const relatedProducts = await axiosInstance.get("/related-products", {
           params: {
             categoryId: response.data.product.category?._id,
-            brandId: response.data.product.brand?._id,
             productId,
           },
         });

@@ -117,8 +117,6 @@ export default function ProductPage() {
   const handleAddProduct = async (newProduct) => {
     try {
       const res = await adminAxiosInstance.post("/products", newProduct);
-      console.log("ii");
-      console.log(res);
       if (res.data.success) {
         setProducts((prev) => [...prev, res.data.product]);
         setTotalProducts((prevTotal) => prevTotal + 1);

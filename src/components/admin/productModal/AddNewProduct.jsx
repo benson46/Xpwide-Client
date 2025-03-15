@@ -4,8 +4,9 @@ import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { adminAxiosInstance } from "../../../utils/axios";
 
-export default function AddNewProduct({ onClose, categories, brands, onSubmit }) {
+export default function AddNewProduct({ onClose, categories, onSubmit }) {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -19,13 +20,42 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
+  const [brandSearchTerm, setBrandSearchTerm] = useState("");
+  const [fetchedBrands, setFetchedBrands] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const cropperRef = useRef(null);
 
   useEffect(() => {
-    if (cropperRef.current && cropperRef.current.cropper) {
+    if (cropperRef.current?.cropper) {
       cropperRef.current.cropper.setAspectRatio(aspectRatio);
     }
   }, [aspectRatio]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (brandSearchTerm.trim()) {
+        fetchBrands(brandSearchTerm);
+      } else {
+        setFetchedBrands([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [brandSearchTerm]);
+
+  const fetchBrands = async (searchTerm) => {
+    try {
+      const response = await adminAxiosInstance.get(
+        `/brand/search?query=${searchTerm}`
+      );
+      // Adjust here to access the nested data array
+      setFetchedBrands(response.data.data || []); // Changed from response.data to response.data.data
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+      toast.error("Failed to fetch brands");
+      setFetchedBrands([]);
+    }
+  };
 
   const validateForm = () => {
     const errors = {};
@@ -54,7 +84,9 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 
   const handleCrop = async () => {
     if (cropperRef.current) {
-      const croppedData = cropperRef.current.cropper.getCroppedCanvas().toDataURL();
+      const croppedData = cropperRef.current.cropper
+        .getCroppedCanvas()
+        .toDataURL();
       try {
         const dataForm = new FormData();
         dataForm.append("file", croppedData);
@@ -62,22 +94,19 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 
         const response = await fetch(
           "https://api.cloudinary.com/v1_1/dva0jwx03/image/upload",
-          {
-            method: "POST",
-            body: dataForm,
-          }
+          { method: "POST", body: dataForm }
         );
 
         const data = await response.json();
-
         if (response.ok) {
           setImages([...images, data.secure_url]);
           setSelectedImage(null);
         } else {
-          toast.error("Failed to upload image to Cloudinary");
+          toast.error("Failed to upload image");
         }
       } catch (err) {
-        console.error("Error uploading to Cloudinary:", err);
+        console.error("Image upload error:", err);
+        toast.error("Image upload failed");
       }
     }
   };
@@ -88,11 +117,10 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     if (images.length !== 3) {
-      toast.error("Please upload exactly 3 images.");
+      toast.error("Please upload exactly 3 images");
       return;
     }
 
@@ -125,7 +153,7 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                   formErrors.name
                     ? "border-red-500 text-black"
                     : "border-gray-800 bg-gray-800 focus:border-yellow-500"
@@ -148,7 +176,7 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                     formErrors.category
                       ? "border-red-500 text-black"
                       : "border-gray-800 bg-gray-800 focus:border-yellow-500"
@@ -170,24 +198,47 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 <label className="block text-sm font-medium text-gray-400">
                   Brand
                 </label>
-                <select
-                  value={formData.brand}
-                  onChange={(e) =>
-                    setFormData({ ...formData, brand: e.target.value })
-                  }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
-                    formErrors.brand
-                      ? "border-red-500 text-black"
-                      : "border-gray-800 bg-gray-800 focus:border-yellow-500"
-                  }`}
-                >
-                  <option value="">Select brand</option>
-                  {brands.map((brand) => (
-                    <option key={brand._id} value={brand._id}>
-                      {brand.title}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={brandSearchTerm}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setBrandSearchTerm(value);
+                      if (selectedBrand && value !== selectedBrand.title) {
+                        setFormData((prev) => ({ ...prev, brand: "" }));
+                        setSelectedBrand(null);
+                      }
+                    }}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
+                      formErrors.brand
+                        ? "border-red-500 text-black"
+                        : "border-gray-800 bg-gray-800 focus:border-yellow-500"
+                    }`}
+                    placeholder="Search brand..."
+                  />
+                  {fetchedBrands.length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full rounded-lg border border-gray-800 bg-gray-800 max-h-48 overflow-y-auto">
+                      {fetchedBrands.map((brand) => (
+                        <li
+                          key={brand._id}
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              brand: brand._id,
+                            }));
+                            setBrandSearchTerm(brand.title);
+                            setSelectedBrand(brand);
+                            setFetchedBrands([]);
+                          }}
+                          className="px-3 py-2 hover:bg-gray-700 cursor-pointer"
+                        >
+                          {brand.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 {formErrors.brand && (
                   <p className="text-red-500 text-sm">{formErrors.brand}</p>
                 )}
@@ -204,12 +255,13 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                   formErrors.description
                     ? "border-red-500 text-black"
-                    : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
+                    : "border-gray-800 bg-gray-800 focus:border-yellow-500"
                 }`}
                 placeholder="Enter product description"
+                rows="4"
               />
               {formErrors.description && (
                 <p className="text-red-500 text-sm">{formErrors.description}</p>
@@ -218,7 +270,6 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 
             {/* Price & Stock */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Price */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-400">
                   Price
@@ -229,10 +280,10 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                   onChange={(e) =>
                     setFormData({ ...formData, price: e.target.value })
                   }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                     formErrors.price
                       ? "border-red-500 text-black"
-                      : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
+                      : "border-gray-800 bg-gray-800 focus:border-yellow-500"
                   }`}
                   placeholder="Enter price"
                 />
@@ -240,7 +291,6 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                   <p className="text-red-500 text-sm">{formErrors.price}</p>
                 )}
               </div>
-              {/* Stock */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-400">
                   Stock
@@ -251,10 +301,10 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
                   }
-                  className={`w-full rounded-lg border px-3 py-2 text-sm placeholder-gray-600 focus:outline-none ${
+                  className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                     formErrors.stock
                       ? "border-red-500 text-black"
-                      : "text-white border-gray-800 bg-gray-800 focus:border-yellow-500"
+                      : "border-gray-800 bg-gray-800 focus:border-yellow-500"
                   }`}
                   placeholder="Enter stock"
                 />
@@ -264,17 +314,17 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
               </div>
             </div>
 
-            {/* Image Upload */}
+            {/* Image Upload Section */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-gray-400">
-                Product Images
+                Product Images (3 required)
               </label>
               <div className="flex space-x-4 overflow-x-auto">
                 {images.map((image, index) => (
                   <div key={index} className="relative flex-shrink-0">
                     <img
                       src={image}
-                      alt={`Cropped ${index}`}
+                      alt={`Preview ${index}`}
                       className="h-32 w-32 rounded-lg object-cover cursor-pointer"
                       onClick={() => setPreviewImage(image)}
                     />
@@ -292,80 +342,42 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                   <div className="flex items-center justify-center h-32 w-32 border-2 border-dashed rounded-lg bg-gray-800 flex-shrink-0">
                     <button
                       type="button"
-                      onClick={() => document.getElementById("fileInput").click()}
+                      onClick={() =>
+                        document.getElementById("fileInput").click()
+                      }
                       className="flex flex-col items-center justify-center"
                     >
                       <Upload className="text-gray-400" />
-                      <span className="text-sm text-gray-400">Upload Image</span>
+                      <span className="text-sm text-gray-400 mt-1">Upload</span>
                     </button>
                     <input
                       type="file"
                       id="fileInput"
                       onChange={handleImageChange}
                       className="hidden"
+                      accept="image/*"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Cropper and Aspect Ratio Options */}
               {selectedImage && (
                 <>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(1)}
-                      className={`px-2 py-1 border rounded ${
-                        aspectRatio === 1 ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      1:1
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(16 / 9)}
-                      className={`px-2 py-1 border rounded ${
-                        aspectRatio === 16 / 9 ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      16:9
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(4 / 3)}
-                      className={`px-2 py-1 border rounded ${
-                        aspectRatio === 4 / 3 ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      4:3
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(3 / 2)}
-                      className={`px-2 py-1 border rounded ${
-                        aspectRatio === 3 / 2 ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      3:2
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(16 / 19)}
-                      className={`px-2 py-1 border rounded ${
-                        aspectRatio === 16 / 19 ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      16:19
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAspectRatio(NaN)}
-                      className={`px-2 py-1 border rounded ${
-                        isNaN(aspectRatio) ? "bg-yellow-500 text-black" : ""
-                      }`}
-                    >
-                      Free
-                    </button>
+                    {[1, 16 / 9, 4 / 3, 3 / 2, 16 / 19, NaN].map((ratio) => (
+                      <button
+                        key={ratio}
+                        type="button"
+                        onClick={() => setAspectRatio(ratio)}
+                        className={`px-2 py-1 border rounded ${
+                          aspectRatio === ratio
+                            ? "bg-yellow-500 text-black"
+                            : ""
+                        }`}
+                      >
+                        {isNaN(ratio) ? "Free" : `${ratio}`}
+                      </button>
+                    ))}
                   </div>
                   <Cropper
                     src={selectedImage}
@@ -374,24 +386,21 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                     guides={false}
                     ref={cropperRef}
                   />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleCrop}
+                      className="mt-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-black hover:bg-yellow-600"
+                    >
+                      Crop & Upload
+                    </button>
+                  </div>
                 </>
               )}
-
-              <div className="flex justify-end gap-3">
-                {selectedImage && (
-                  <button
-                    type="button"
-                    onClick={handleCrop}
-                    className="rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-black hover:bg-yellow-600"
-                  >
-                    Crop Image
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
@@ -406,21 +415,22 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
                 Add Product
               </button>
             </div>
-
-            {previewImage && (
-              <div
-                className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-                onClick={() => setPreviewImage(null)}
-              >
-                <img
-                  src={previewImage}
-                  alt="Preview"
-                  className="max-w-full max-h-full rounded-lg"
-                />
-              </div>
-            )}
           </form>
         </div>
+
+        {/* Preview Modal */}
+        {previewImage && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            onClick={() => setPreviewImage(null)}
+          >
+            <img
+              src={previewImage}
+              alt="Full Preview"
+              className="max-w-full max-h-full rounded-lg"
+            />
+          </div>
+        )}
 
         <button
           onClick={onClose}
@@ -436,13 +446,6 @@ export default function AddNewProduct({ onClose, categories, brands, onSubmit })
 AddNewProduct.propTypes = {
   onClose: PropTypes.func.isRequired,
   categories: PropTypes.arrayOf(
-    PropTypes.shape({
-      _id: PropTypes.string.isRequired,
-      title: PropTypes.string.isRequired,
-      isBlocked: PropTypes.bool.isRequired,
-    })
-  ).isRequired,
-  brands: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
       title: PropTypes.string.isRequired,

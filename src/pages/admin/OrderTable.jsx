@@ -290,7 +290,8 @@ export default function OrdersTable() {
                   {selectedOrder.products.map((p) => (
                     <li key={p.productId} className="flex justify-between">
                       <span>{p.name}</span>
-                      <span>x{p.quantity}</span>
+                      <span className="text-center">x{p.quantity}</span>
+                      <span>{p.price*p.quantity}</span>
                     </li>
                   ))}
                 </ul>
