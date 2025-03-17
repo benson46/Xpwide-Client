@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { axiosInstance } from "../../../utils/axios";
 import { useRazorpay } from "react-razorpay";
+import toast from "react-hot-toast";
 
 const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
   const { error, Razorpay } = useRazorpay();
@@ -44,28 +45,38 @@ const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: Number(amount).toFixed(0) * 100,
       currency: "INR",
-      name: "",
-      description: "",
-      order_id: "",
+      name: "XPWIDE",
+      description: "Order Payment",
       handler: (response) => {
-        console.log(response);
-        handlePlaceOrder(isWallet && "completed");
+        handlePlaceOrder( "Success" );
         setIsOrderPlaced(true);
       },
-      prefill: {
-        name: userInfo.name,
-        email: userInfo.email,
-        contact: userInfo.contact,
+      modal: {
+        ondismiss: () => {
+          // Payment failed or cancelled
+          handlePlaceOrder("Failed" );
+        },
       },
+      prefill: { ...userInfo },
       theme: {
         color: "#F37254",
       },
     };
 
     const razorpayInstance = new Razorpay(options);
+    
+    razorpayInstance.on("payment.failed", (response) => {
+      console.error("Payment failed:", response);
+      handlePlaceOrder( "Failed" );
+      toast.error(`Payment failed: ${response.error.description}`);
+      console.log(`Payment failed: ${response.error.description}`)
+      razorpayInstance.close();
+    });
+
     razorpayInstance.open();
   };
 
+  
   // Show loading only during initial load
   if (!razorpayInitialized.current || isLoadingUserInfo) {
     return <p className="text-center mt-3">Loading payment details...</p>;

@@ -222,7 +222,7 @@ export default function CheckoutPage() {
   };
 
   // Handle order placement
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (paymentStatus) => {
     if (!selectedAddress) {
       toast.error("Please select a delivery address");
       return;
@@ -277,15 +277,20 @@ export default function CheckoutPage() {
         totalAmount: orderSummary.total,
         couponCode: couponDetails ? couponDetails.code : null,
         couponId: couponDetails ? couponDetails._id : null,
+        paymentStatus: paymentStatus || "Pending"
       };
   
       // Create the order after all checks pass
-      await axiosInstance.post("/checkout-order-success", orderData);
-      toast.success("Order placed successfully!");
-      setShowSuccessModal(true);
+      const response = await axiosInstance.post("/checkout-order-success", orderData);
+      if(response.data.success && response.data.order.paymentStatus !== 'Failed'){
+        toast.success("Order placed successfully!");
+        setShowSuccessModal(true);
+      }
+      if(response.data.order.paymentStatus === "Failed"){
+        navigate("/orders")
+      }
     } catch (error) {
       console.error("Order placement error:", error);
-      toast.error("Failed to place order");
       if (paymentMethod === "Wallet") {
         toast.error("Wallet transaction failed. Order was not placed.");
       }

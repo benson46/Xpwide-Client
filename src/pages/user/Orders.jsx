@@ -1,24 +1,87 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../utils/axios";
 import toast from "react-hot-toast";
+import { IndianRupee } from "lucide-react";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [userWalletBalance, setUserWalletBalance] = useState(0);
 
   useEffect(() => {
-    axiosInstance
-      .get("/orders", { withCredentials: true })
-      .then((response) => {
-        setOrders(Array.isArray(response.data) ? response.data : []);
-      })
-      .catch((error) => console.error("Error fetching orders:", error))
-      .finally(() => {
+    const fetchData = async () => {
+      try {
+        const [ordersResponse, walletResponse] = await Promise.all([
+          axiosInstance.get("/orders", { withCredentials: true }),
+          axiosInstance.get("/wallet", { withCredentials: true }),
+        ]);
+
+        setOrders(Array.isArray(ordersResponse.data) ? ordersResponse.data : []);
+        setUserWalletBalance(walletResponse.data.wallet?.balance || 0);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load orders");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
+
+  const handleRetryPayment = (order) => {
+    setSelectedOrderForPayment(order);
+    setShowPaymentModal(true);
+  };
+
+  const processPaymentRetry = async () => {
+    try {
+      const response = await axiosInstance.post(
+        `/orders/${selectedOrderForPayment._id}/retry-payment`,
+        { paymentMethod },
+        { withCredentials: true }
+      );
+
+      if (paymentMethod === "Razorpay") {
+        const razorpayAmount = response.data.amount;
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY,
+          amount: razorpayAmount * 100,
+          currency: "INR",
+          name: "Your Store",
+          handler: async (response) => {
+            await axiosInstance.post(
+              `/orders/${selectedOrderForPayment._id}/verify-payment`,
+              response
+            );
+            toast.success("Payment successful!");
+            fetchOrders();
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        toast.success("Payment method updated successfully!");
+        fetchOrders();
+      }
+      setShowPaymentModal(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Payment retry failed");
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axiosInstance.get("/orders", { withCredentials: true });
+      setOrders(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
 
   const cancelOrder = async (orderId, productId) => {
     try {
@@ -27,8 +90,7 @@ export default function Orders() {
         {},
         { withCredentials: true }
       );
-  
-      // Update the UI with new order status from the response
+
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order._id === orderId
@@ -39,19 +101,16 @@ export default function Orders() {
                     ? { ...product, status: "Cancelled" }
                     : product
                 ),
-                status: response.data.order.status, // Ensure order status is updated
+                status: response.data.order.status,
               }
             : order
         )
       );
-  
       toast.success("Order cancelled successfully");
     } catch (error) {
-      console.error("Error cancelling order:", error);
       toast.error("Failed to cancel order");
     }
   };
-  
 
   const returnOrder = async (orderId, productId) => {
     try {
@@ -77,8 +136,28 @@ export default function Orders() {
       );
       toast.success("Return request initiated");
     } catch (error) {
-      console.error("Error returning order:", error);
       toast.error("Failed to initiate return");
+    }
+  };
+
+  const downloadInvoice = async (orderId) => {
+    try {
+      const response = await axiosInstance.get(`/orders/${orderId}/invoice`, {
+        responseType: "blob",
+        withCredentials: true,
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice-${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to download invoice");
     }
   };
 
@@ -102,42 +181,38 @@ export default function Orders() {
         return "text-gray-500";
     }
   };
+
   const canReturnOrder = (product) => {
     if (product.status !== "Delivered") return false;
-
-    // Get the delivery date
     const deliveredDate = new Date(product.deliveryDate);
-    const currentDate = new Date();
-
-    // Calculate the difference in days
-    const timeDifference = currentDate - deliveredDate;
-    const daysDifference = timeDifference / (1000 * 3600 * 24);
-
-    // Return true if the order was delivered within 7 days, otherwise false
+    const daysDifference = (new Date() - deliveredDate) / (1000 * 3600 * 24);
     return daysDifference <= 7;
   };
 
-  const openModal = (order) => {
-    setSelectedOrder(order);
-  };
+  const openModal = (order) => setSelectedOrder(order);
+  const closeModal = () => setSelectedOrder(null);
 
-  // Define closeModal function
-  const closeModal = () => {
-    setSelectedOrder(null);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-center mb-8">ORDERS</h1>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b">
-              <th className="text-left py-4 px-4">PRODUCT</th>
-              <th className="text-center py-4 px-4">QUANTITY</th>
-              <th className="text-center py-4 px-4">PRICE</th>
-              <th className="text-center py-4 px-4">STATUS</th>
-              <th className="text-center py-4 px-4">PAYMENT METHOD</th>
+              <th className="text-left py-4 px-4">ORDER DATE</th>
+              <th className="text-left py-4 px-4">PRODUCTS</th>
+              <th className="text-center py-4 px-4">TOTAL AMOUNT</th>
               <th className="text-center py-4 px-4">ACTIONS</th>
+              <th className="text-center py-4 px-4">PAYMENT STATUS</th>
             </tr>
           </thead>
           <tbody>
@@ -148,87 +223,208 @@ export default function Orders() {
                 </td>
               </tr>
             ) : (
-              orders.map((order) =>
-                order.products.map((product, productIndex) => (
-                  <tr key={`${order._id}-${product._id || productIndex}`} className="border-b">
-                    <td className="py-4 px-4">
-                      <div className="flex items-start space-x-4">
-                        <img
-                          src={product.images?.[0] || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-24 h-24 rounded"
-                        />
-                        <div>
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm text-gray-600">{product.category}</p>
+              orders.map((order) => (
+                <tr key={order._id} className="border-b">
+                  <td className="py-4 px-4">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="space-y-4">
+                      {order.products.map((product) => (
+                        <div key={product._id} className="flex items-start space-x-4">
+                          <img
+                            src={product.images?.[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-24 h-24 rounded"
+                          />
+                          <div>
+                            <h3 className="font-medium">{product.name}</h3>
+                            <div className="text-sm text-gray-600">
+                              {product.quantity} × <IndianRupee className="h-4 w-4 inline" />
+                              {product.price.toFixed(2)}
+                              <p className={`text-sm ${getStatusColor(product.status)}`}>
+                          Status: {product.status}
+                        </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {product.status === "Delivered" && canReturnOrder(product) && (
+                                <button
+                                  onClick={() => returnOrder(order._id, product._id)}
+                                  className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  RETURN
+                                </button>
+                              )}
+                              {!["Return Pending", "Return Rejected", "Return Approved", "Cancelled", "Delivered"].includes(
+                                product.status
+                              ) && (
+                                <button
+                                  onClick={() => cancelOrder(order._id, product._id)}
+                                  className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  CANCEL
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="text-center py-4 px-4">{product.quantity}</td>
-                    <td className="text-center py-4 px-4">₹{(product.price * product.quantity).toFixed(2)}</td>
-                    <td className="text-center py-4 px-4">
-                      <span className={getStatusColor(product.status)}>{product.status}</span>
-                    </td>
-                    <td className="text-center py-4 px-4">{order.paymentMethod}</td> {/* Added Payment Method */}
-                    <td className="text-center py-4 px-4 flex flex-col space-y-2">
-                      <button onClick={() => openModal(order)} className="bg-blue-500 text-white px-3 py-1 rounded">
-                        VIEW
-                      </button>
-                      {product.status === "Delivered" && canReturnOrder(product) && (
-                        <button onClick={() => returnOrder(order._id, product._id)} className="bg-yellow-500 text-white px-3 py-1 rounded">
-                          RETURN
-                        </button>
-                      )}
-                      {product.status !== "Return Pending" &&
-                        product.status !== "Return Rejected" &&
-                        product.status !== "Return Approved" &&
-                        product.status !== "Cancelled" &&
-                        product.status !== "Delivered" && (
-                          <button onClick={() => cancelOrder(order._id, product._id)} className="bg-red-500 text-white px-3 py-1 rounded">
-                            CANCEL
-                          </button>
-                        )}
-                    </td>
-                  </tr>
-                ))
-              )
+                      ))}
+                    </div>
+                  </td>
+                  <td className="text-center py-4 px-4">
+                    <div className="flex items-center justify-center gap-1">
+                      <IndianRupee className="h-4 w-4" />
+                      {order.totalAmount.toFixed(2)}
+                    </div>
+                  </td>
+                  <td className="text-center py-4 px-4 space-y-2">
+                    <button
+                      onClick={() => openModal(order)}
+                      className="bg-gray-700 text-white px-3 py-1 rounded w-full flex items-center justify-center gap-2"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path
+                          fillRule="evenodd"
+                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Details
+                    </button>
+                  </td>
+                  <td className="text-center py-4 px-4">
+                    <span className={getStatusColor(order.paymentStatus)}>
+                      {order.paymentStatus}
+                    </span>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
-  
-      {/* Modal for order details */}
+
+      {/* Order Details Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
             <h2 className="text-xl font-bold mb-4">Order Details</h2>
-            {selectedOrder.addressId && (() => {
-              const { address, locality, city, state, pincode, name } = selectedOrder.addressId;
-              return (
-                <>
-                  <p><strong>Order ID:</strong> {selectedOrder._id}</p>
-                  <p><strong>Customer Name:</strong> {name}</p>
-                  <p><strong>Product:</strong></p>
-                  <ul className="list-disc ml-5 mb-2">
-                    {selectedOrder.products.map((product, index) => (
-                      <li key={index}>{product.name} - {product.quantity}</li>
-                    ))}
-                  </ul>
-                  <p><strong>Address:</strong> {`${address}, ${locality}, ${city}, ${state} - ${pincode}`}</p>
-                  <p><strong>Total:</strong> ₹{selectedOrder.totalAmount}</p>
-                  <p><strong>Payment Method:</strong> {selectedOrder.paymentMethod}</p> {/* Added Payment Method */}
-                  <p><strong>Booked Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
-                  {selectedOrder.products.some((product) => product.status === "Delivered" && product.deliveryDate) && (
-                    <p><strong>Delivered Date:</strong> {new Date(selectedOrder.products.find((product) => product.status === "Delivered").deliveryDate).toLocaleDateString()}</p>
-                  )}
-                </>
-              );
-            })()}
-            <button onClick={closeModal} className="bg-red-500 text-white px-4 py-2 rounded mt-4">Close</button>
+            <div className="space-y-4">
+              <p>
+                <strong>Order ID:</strong> {selectedOrder._id}
+              </p>
+              <p>
+                <strong>Payment Method:</strong> {selectedOrder.paymentMethod}
+              </p>
+              <p>
+                <strong>Total Amount:</strong>{" "}
+                <span className="flex items-center gap-1">
+                  <IndianRupee className="h-4 w-4" />
+                  {selectedOrder.totalAmount.toFixed(2)}
+                </span>
+              </p>
+              <div>
+                <h3 className="font-bold mb-2">Products</h3>
+                <div className="space-y-4">
+                  {selectedOrder.products.map((product) => (
+                    <div
+                      key={product._id}
+                      className="flex items-start gap-4 border-b pb-4"
+                    >
+                      <img
+                        src={product.images?.[0] || "/placeholder.svg"}
+                        alt={product.name}
+                        className="w-20 h-20 rounded"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium">{product.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {product.quantity} × <IndianRupee className="h-4 w-4 inline" />
+                          {product.price.toFixed(2)}
+                        </p>
+                        <p className={`text-sm ${getStatusColor(product.status)}`}>
+                          Status: {product.status}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => downloadInvoice(selectedOrder._id)}
+                className="bg-green-500 text-white px-4 py-2 rounded w-full"
+              >
+                Download Invoice
+              </button>
+              <button
+                onClick={closeModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded w-full"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Retry Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h2 className="text-xl font-bold mb-4">Retry Payment</h2>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="COD"
+                  checked={paymentMethod === "COD"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                Cash on Delivery
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="Razorpay"
+                  checked={paymentMethod === "Razorpay"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                Razorpay
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="Wallet"
+                  checked={paymentMethod === "Wallet"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                Wallet (Balance: ₹{userWalletBalance.toFixed(2)})
+              </label>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={processPaymentRetry}
+                className="bg-green-500 text-white px-4 py-2 rounded flex-1"
+                disabled={!paymentMethod}
+              >
+                Confirm Payment
+              </button>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded flex-1"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-  
 }
