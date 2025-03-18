@@ -7,6 +7,12 @@ import { adminAxiosInstance } from "../../utils/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { adminLogout } from "../../store/adminSlice";
 
+import SalesOverviewChart from "../../components/admin/dashboard/SalesOverviewChart";
+import { BestSellingProductsChart } from "../../components/admin/dashboard/BestSellingProductsChart";
+import BestSellingCategoriesChart from "../../components/admin/dashboard/BestSellingCategoriesChart";
+import { BestSellingBrandsChart } from "../../components/admin/dashboard/BestSellingBrandsChart";
+
+
 export default function Dashboard() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -14,14 +20,73 @@ export default function Dashboard() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [salesOverviewData, setSalesOverviewData] = useState([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState([]);
+  const [bestSellingBrands, setBestSellingBrands] = useState([]);
+  const [bestSellingCategories, setBestSellingCategories] = useState([]);
 
-  const admin = useSelector((state) => state.admin)
-const dispatch = useDispatch();
-  useEffect(()=>{
-    if(!admin){
-      dispatch(adminLogout())
+  const admin = useSelector((state) => state.admin);
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (!admin) {
+      dispatch(adminLogout());
     }
-  })
+  });
+
+
+const fetchBestSellingCategories = async () => {
+  try {
+    const response = await adminAxiosInstance.get("/best-selling-categories");
+    setBestSellingCategories(response.data.data);
+  } catch (err) {
+    console.error("Error fetching best-selling categories:", err);
+  }
+};
+
+useEffect(() => {
+  fetchBestSellingCategories();
+}, []);
+
+  const fetchBestSellingBrands = async () => {
+    try {
+      const response = await adminAxiosInstance.get("/best-selling-brands");
+      setBestSellingBrands(response.data.data);
+    } catch (err) {
+      console.error("Error fetching best-selling brands:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBestSellingBrands();
+  }, []);
+
+  const fetchBestSellingProducts = async () => {
+    try {
+      const response = await adminAxiosInstance.get("/best-selling-products");
+      setBestSellingProducts(response.data.data);
+    } catch (err) {
+      console.error("Error fetching best-selling products:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBestSellingProducts();
+  }, []);
+
+  const fetchSalesOverview = async () => {
+    try {
+      const response = await adminAxiosInstance.get("/sales-overview", {
+        params: { period },
+      });
+      setSalesOverviewData(response.data.data);
+    } catch (err) {
+      console.error("Error fetching sales overview:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSalesOverview();
+  }, [period]);
 
   const fetchSalesReport = async () => {
     try {
@@ -46,29 +111,37 @@ const dispatch = useDispatch();
   const downloadReport = async (type) => {
     try {
       setLoading(true);
-      const response = await adminAxiosInstance.get(`/download-report/${type}`, {
-        params: {
-          startDate: startDate?.toISOString(),
-          endDate: endDate?.toISOString(),
-          period,
-        },
-        responseType: "blob",
-      });
+      const response = await adminAxiosInstance.get(
+        `/download-report/${type}`,
+        {
+          params: {
+            startDate: startDate?.toISOString(),
+            endDate: endDate?.toISOString(),
+            period,
+          },
+          responseType: "blob",
+        }
+      );
 
       const url = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = url;
-      if(type === "excel"){
-        link.setAttribute("download", `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-      }else{
-      link.setAttribute("download", `sales_report.${type}`);
+      if (type === "excel") {
+        link.setAttribute(
+          "download",
+          `Sales_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+        );
+      } else {
+        link.setAttribute("download", `sales_report.${type}`);
       }
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(`Failed to download ${type.toUpperCase()} report. Please try again.`);
+      setError(
+        `Failed to download ${type.toUpperCase()} report. Please try again.`
+      );
       console.error(`Error downloading ${type} report:`, err);
     } finally {
       setLoading(false);
@@ -83,12 +156,24 @@ const dispatch = useDispatch();
         <main className="flex-1 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
+            
           </div>
 
           {/* Filters */}
           <div className="bg-gray-800 rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Report Filters</h2>
             <div className="flex flex-wrap gap-4 items-end">
+              {/* Sales Overview Chart */}
+            <SalesOverviewChart data={salesOverviewData} />
+
+{/* Best-Selling Products Chart */}
+<BestSellingProductsChart data={bestSellingProducts} />
+
+{/* Best-Selling Categories Chart */}
+<BestSellingCategoriesChart data={bestSellingCategories} />
+
+{/* Best-Selling Brands Chart */}
+<BestSellingBrandsChart data={bestSellingBrands} />
               <div>
                 <label className="block text-sm mb-2">Period</label>
                 <select
@@ -150,20 +235,22 @@ const dispatch = useDispatch();
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Sales</h3>
-                  <p className="text-2xl font-bold">{reportData.summary.totalSales}</p>
+                  <p className="text-2xl font-bold">
+                    {reportData.summary.totalSales}
+                  </p>
                 </div>
-                
+
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Amount</h3>
                   <p className="text-2xl font-bold">
-                  ₹{reportData.summary.totalAmount.toFixed(2)}
+                    ₹{reportData.summary.totalAmount.toFixed(2)}
                   </p>
                 </div>
-                
+
                 <div className="bg-gray-800 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-2">Total Discount</h3>
                   <p className="text-2xl font-bold">
-                  ₹{reportData.summary.totalDiscount.toFixed(2)}
+                    ₹{reportData.summary.totalDiscount.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -171,22 +258,42 @@ const dispatch = useDispatch();
               {/* Actions */}
               <div className="flex gap-4 mb-6">
                 <button
-                  onClick={() => downloadReport('pdf')}
+                  onClick={() => downloadReport("pdf")}
                   disabled={loading}
                   className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
                   </svg>
                   PDF Report
                 </button>
                 <button
-                  onClick={() => downloadReport('excel')}
+                  onClick={() => downloadReport("excel")}
                   disabled={loading}
                   className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
                   </svg>
                   Excel Report
                 </button>
@@ -209,22 +316,32 @@ const dispatch = useDispatch();
                     </thead>
                     <tbody>
                       {reportData.reports.map((sale) => (
-                        <tr key={sale.orderId} className="border-b border-gray-700 hover:bg-gray-700">
+                        <tr
+                          key={sale.orderId}
+                          className="border-b border-gray-700 hover:bg-gray-700"
+                        >
                           <td className="py-3 px-4">
                             {new Date(sale.orderDate).toLocaleDateString()}
                             {console.log(sale)}
                           </td>
                           <td className="py-3 px-4">{`${sale.customer.firstName}`}</td>
                           <td className="py-3 px-4">{sale.product.length}</td>
-                          <td className="py-3 px-4">₹{sale.finalAmount.toFixed(2)}</td>
+                          <td className="py-3 px-4">
+                            ₹{sale.finalAmount.toFixed(2)}
+                          </td>
                           <td className="py-3 px-4">{sale.paymentMethod}</td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded text-sm ${
-                              sale.deliveryStatus === 'Delivered' ? 'bg-green-500' :
-                              sale.deliveryStatus === 'Pending' ? 'bg-yellow-500' :
-                              sale.deliveryStatus === 'Cancelled' ? 'bg-red-500' :
-                              'bg-blue-500'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded text-sm ${
+                                sale.deliveryStatus === "Delivered"
+                                  ? "bg-green-500"
+                                  : sale.deliveryStatus === "Pending"
+                                  ? "bg-yellow-500"
+                                  : sale.deliveryStatus === "Cancelled"
+                                  ? "bg-red-500"
+                                  : "bg-blue-500"
+                              }`}
+                            >
                               {sale.deliveryStatus}
                             </span>
                           </td>
