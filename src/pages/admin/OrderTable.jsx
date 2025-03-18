@@ -142,55 +142,66 @@ export default function OrdersTable() {
                 Status: {product.status}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {product.status === "Return Pending" ? (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() =>
-                        handleReturnAction(
-                          order._id,
-                          product.productId,
-                          "approve"
-                        )
-                      }
-                      className="bg-green-500 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Approve Return
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleReturnAction(
-                          order._id,
-                          product.productId,
-                          "reject"
-                        )
-                      }
-                      className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Reject Return
-                    </button>
+                {order.paymentStatus === "Failed" ? (
+                  <div className="text-red-500 text-sm">
+                    Order cannot be modified - Payment failed
                   </div>
                 ) : (
-                  <select
-                    value={product.status}
-                    onChange={(e) =>
-                      handleStatusChange(
-                        order._id,
-                        product.productId,
-                        e.target.value
-                      )
-                    }
-                    className="border rounded px-2 py-1 text-sm text-black"
-                    disabled={[
-                      "Delivered",
-                      "Return Rejected",
-                      "Return Approved",
-                      "Cancelled",
-                    ].includes(product.status)}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Delivered">Delivered</option>
-                  </select>
+                  <>
+                    {product.status === "Return Pending" ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() =>
+                            handleReturnAction(
+                              order._id,
+                              product.productId,
+                              "approve"
+                            )
+                          }
+                          className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Approve Return
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleReturnAction(
+                              order._id,
+                              product.productId,
+                              "reject"
+                            )
+                          }
+                          className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Reject Return
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        value={product.status}
+                        onChange={(e) =>
+                          handleStatusChange(
+                            order._id,
+                            product.productId,
+                            e.target.value
+                          )
+                        }
+                        className="border rounded px-2 py-1 text-sm text-black"
+                        disabled={
+                          order.paymentStatus === "Failed" ||
+                          [
+                            "Delivered",
+                            "Return Rejected",
+                            "Return Approved",
+                            "Cancelled",
+                          ].includes(product.status)
+                        }
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                      </select>
+                    )}
+                  </>
                 )}
                 {product.status !== "Cancelled" &&
                 ![
@@ -198,7 +209,8 @@ export default function OrdersTable() {
                   "Return Pending",
                   "Return Rejected",
                   "Return Approved",
-                ].includes(product.status) ? (
+                ].includes(product.status) &&
+                order.paymentStatus !== "Failed" ? ( // Add this condition
                   <button
                     onClick={() =>
                       handleCancelProduct(order._id, product.productId)
@@ -291,7 +303,7 @@ export default function OrdersTable() {
                     <li key={p.productId} className="flex justify-between">
                       <span>{p.name}</span>
                       <span className="text-center">x{p.quantity}</span>
-                      <span>{p.price*p.quantity}</span>
+                      <span>{p.price * p.quantity}</span>
                     </li>
                   ))}
                 </ul>

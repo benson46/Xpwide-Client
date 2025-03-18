@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   });
   const [publicCoupons, setPublicCoupons] = useState([]);
 
+
   // Fetch initial checkout, address, and wallet data
   useEffect(() => {
     if (!user) {
@@ -221,6 +222,7 @@ export default function CheckoutPage() {
     toast.success("Coupon removed");
   };
 
+  
   // Handle order placement
   const handlePlaceOrder = async (paymentStatus) => {
     if (!selectedAddress) {
@@ -234,69 +236,37 @@ export default function CheckoutPage() {
     }
   
     try {
-      // If payment is via wallet, process the wallet transaction first
-      if (paymentMethod === "Wallet") {
-        const walletRes = await axiosInstance.put("/wallet", {
-          amount: orderSummary.total,
-          paymentStatus: "completed",
-          type: "debit",
-          products: products.map((item) => ({
-            productId: item.productId._id,
-          })),
-        });
-  
-        // Only proceed if wallet transaction was successful
-        if (!walletRes.data.success) {
-          console.log(walletRes)
-          toast.error("Wallet transaction failed. Order was not placed.");
-          return;
-        }
-      }
-  
-      // Prepare the order payload
-      const orderProducts = products.map((item) => {
-        const prod = item.productId;
-        const effectivePrice =
-          item.finalPrice !== undefined
-            ? item.finalPrice
-            : prod.hasOffer && prod.discountedPrice && prod.discountedPrice !== 0
-            ? prod.discountedPrice
-            : prod.price;
-        return {
-          productId: prod._id,
-          quantity: item.quantity,
-          originalPrice: prod.price,
-          productPrice: effectivePrice,
-        };
-      });
-  
       const orderData = {
         addressId: selectedAddress,
         paymentMethod,
-        products: orderProducts,
+        products: products.map((item) => ({
+          productId: item.productId._id,
+          quantity: item.quantity,
+          originalPrice: item.productId.price,
+          productPrice: item.finalPrice || item.productId.price,
+        })),
         totalAmount: orderSummary.total,
         couponCode: couponDetails ? couponDetails.code : null,
         couponId: couponDetails ? couponDetails._id : null,
-        paymentStatus: paymentStatus || "Pending"
+        paymentStatus: paymentStatus, // Pass the payment status directly
       };
   
-      // Create the order after all checks pass
+      // Create the order only after payment is successful
       const response = await axiosInstance.post("/checkout-order-success", orderData);
-      if(response.data.success && response.data.order.paymentStatus !== 'Failed'){
-        toast.success("Order placed successfully!");
-        setShowSuccessModal(true);
-      }
-      if(response.data.order.paymentStatus === "Failed"){
-        navigate("/orders")
+      console.log(response)
+      if (response.data.success) {
+        if (paymentStatus === "Success") {
+          toast.success("Order placed successfully!");
+          setShowSuccessModal(true);
+        } else if (paymentStatus === "Failed") {
+          navigate("/orders");
+        }
       }
     } catch (error) {
       console.error("Order placement error:", error);
-      if (paymentMethod === "Wallet") {
-        toast.error("Wallet transaction failed. Order was not placed.");
-      }
+      toast.error("Order processing failed.");
     }
   };
-  
 
   if (loading) {
     return (
@@ -633,7 +603,7 @@ export default function CheckoutPage() {
         amount={orderSummary.total}
         onClose={() => {
           setShowSuccessModal(false);
-          navigate("/");
+          navigate("/orders");
         }}
       />
     </div>

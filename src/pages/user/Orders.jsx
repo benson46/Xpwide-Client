@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../../utils/axios";
 import toast from "react-hot-toast";
 import { IndianRupee } from "lucide-react";
+import RazorPay from "../../components/user/razorpay-payment/RazorPay";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -11,6 +12,8 @@ export default function Orders() {
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [userWalletBalance, setUserWalletBalance] = useState(0);
+  const [showRazorpay, setShowRazorpay] = useState(false);
+  const [razorpayAmount, setRazorpayAmount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,7 +23,9 @@ export default function Orders() {
           axiosInstance.get("/wallet", { withCredentials: true }),
         ]);
 
-        setOrders(Array.isArray(ordersResponse.data) ? ordersResponse.data : []);
+        setOrders(
+          Array.isArray(ordersResponse.data) ? ordersResponse.data : []
+        );
         setUserWalletBalance(walletResponse.data.wallet?.balance || 0);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -38,45 +43,11 @@ export default function Orders() {
     setShowPaymentModal(true);
   };
 
-  const processPaymentRetry = async () => {
-    try {
-      const response = await axiosInstance.post(
-        `/orders/${selectedOrderForPayment._id}/retry-payment`,
-        { paymentMethod },
-        { withCredentials: true }
-      );
-
-      if (paymentMethod === "Razorpay") {
-        const razorpayAmount = response.data.amount;
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY,
-          amount: razorpayAmount * 100,
-          currency: "INR",
-          name: "Your Store",
-          handler: async (response) => {
-            await axiosInstance.post(
-              `/orders/${selectedOrderForPayment._id}/verify-payment`,
-              response
-            );
-            toast.success("Payment successful!");
-            fetchOrders();
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        toast.success("Payment method updated successfully!");
-        fetchOrders();
-      }
-      setShowPaymentModal(false);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Payment retry failed");
-    }
-  };
-
   const fetchOrders = async () => {
     try {
-      const response = await axiosInstance.get("/orders", { withCredentials: true });
+      const response = await axiosInstance.get("/orders", {
+        withCredentials: true,
+      });
       setOrders(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -161,6 +132,39 @@ export default function Orders() {
     }
   };
 
+  const processPaymentRetry = async () => {
+    try {
+      const response = await axiosInstance.post(
+        `/orders/${selectedOrderForPayment._id}/retry-payment`,
+        { paymentMethod },
+        { withCredentials: true }
+      );
+
+      if (paymentMethod === "Razorpay") {
+        // Set Razorpay amount from the response and show the component
+        setRazorpayAmount(response.data.amount);
+        setShowPaymentModal(false); // Close payment method modal
+        setShowRazorpay(true); // Show RazorPay component
+      } else if (paymentMethod === "Wallet") {
+        // Handle wallet payment
+        if (userWalletBalance < selectedOrderForPayment.totalAmount) {
+          toast.error("Insufficient wallet balance");
+          return;
+        }
+        toast.success("Payment successful!");
+        fetchOrders();
+        setShowPaymentModal(false);
+      } else {
+        // Handle COD or other methods
+        toast.success("Payment method updated");
+        fetchOrders();
+        setShowPaymentModal(false);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Payment failed");
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Pending":
@@ -231,7 +235,10 @@ export default function Orders() {
                   <td className="py-4 px-4">
                     <div className="space-y-4">
                       {order.products.map((product) => (
-                        <div key={product._id} className="flex items-start space-x-4">
+                        <div
+                          key={product._id}
+                          className="flex items-start space-x-4"
+                        >
                           <img
                             src={product.images?.[0] || "/placeholder.svg"}
                             alt={product.name}
@@ -240,26 +247,40 @@ export default function Orders() {
                           <div>
                             <h3 className="font-medium">{product.name}</h3>
                             <div className="text-sm text-gray-600">
-                              {product.quantity} × <IndianRupee className="h-4 w-4 inline" />
+                              {product.quantity} ×{" "}
+                              <IndianRupee className="h-4 w-4 inline" />
                               {product.price.toFixed(2)}
-                              <p className={`text-sm ${getStatusColor(product.status)}`}>
-                          Status: {product.status}
-                        </p>
+                              <p
+                                className={`text-sm ${getStatusColor(
+                                  product.status
+                                )}`}
+                              >
+                                Status: {product.status}
+                              </p>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-2">
-                              {product.status === "Delivered" && canReturnOrder(product) && (
+                              {product.status === "Delivered" &&
+                                canReturnOrder(product) && (
+                                  <button
+                                    onClick={() =>
+                                      returnOrder(order._id, product._id)
+                                    }
+                                    className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+                                  >
+                                    RETURN
+                                  </button>
+                                )}
+                              {![
+                                "Return Pending",
+                                "Return Rejected",
+                                "Return Approved",
+                                "Cancelled",
+                                "Delivered",
+                              ].includes(product.status) && (
                                 <button
-                                  onClick={() => returnOrder(order._id, product._id)}
-                                  className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-                                >
-                                  RETURN
-                                </button>
-                              )}
-                              {!["Return Pending", "Return Rejected", "Return Approved", "Cancelled", "Delivered"].includes(
-                                product.status
-                              ) && (
-                                <button
-                                  onClick={() => cancelOrder(order._id, product._id)}
+                                  onClick={() =>
+                                    cancelOrder(order._id, product._id)
+                                  }
                                   className="bg-red-500 text-white px-3 py-1 rounded text-sm"
                                 >
                                   CANCEL
@@ -303,6 +324,26 @@ export default function Orders() {
                       {order.paymentStatus}
                     </span>
                   </td>
+                  <td className="text-center py-4 px-4 space-y-2">
+                    {order.paymentStatus === "Failed" && (
+                      <button
+                        onClick={() => handleRetryPayment(order)}
+                        className="bg-orange-500 text-white px-3 py-1 rounded w-full flex items-center justify-center gap-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M21.5 2v6h-6M2.5 22v-6h6M22 12a10 10 0 01-10.25 10M2 12a10 10 0 0110.25-10" />
+                        </svg>
+                        Retry Payment
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
@@ -345,10 +386,15 @@ export default function Orders() {
                       <div className="flex-1">
                         <h4 className="font-medium">{product.name}</h4>
                         <p className="text-sm text-gray-600">
-                          {product.quantity} × <IndianRupee className="h-4 w-4 inline" />
+                          {product.quantity} ×{" "}
+                          <IndianRupee className="h-4 w-4 inline" />
                           {product.price.toFixed(2)}
                         </p>
-                        <p className={`text-sm ${getStatusColor(product.status)}`}>
+                        <p
+                          className={`text-sm ${getStatusColor(
+                            product.status
+                          )}`}
+                        >
                           Status: {product.status}
                         </p>
                       </div>
@@ -372,7 +418,43 @@ export default function Orders() {
           </div>
         </div>
       )}
-
+      {showRazorpay && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <RazorPay
+              amount={razorpayAmount}
+              handlePlaceOrder={async (status) => {
+                if (status === "Success") {
+                  try {
+                    await axiosInstance.patch(
+                      `/orders/${selectedOrderForPayment._id}/update-payment-status`,
+                      { paymentStatus: "Success" },
+                      { withCredentials: true }
+                    );
+                    toast.success("Payment successful!");
+                    await fetchOrders(); // Wait for data refresh
+                  } catch (error) {
+                    toast.error("Failed to update payment status");
+                  }
+                } else {
+                  toast.error("Payment failed");
+                }
+                setShowRazorpay(false); // Close modal after updates
+              }}
+              isWallet={false}
+            />
+            <button
+              onClick={() => {
+                setShowRazorpay(false);
+                setSelectedOrderForPayment(null);
+              }}
+              className="w-full mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
       {/* Payment Retry Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">

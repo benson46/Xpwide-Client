@@ -53,8 +53,7 @@ const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
       },
       modal: {
         ondismiss: () => {
-          // Payment failed or cancelled
-          handlePlaceOrder("Failed" );
+         
         },
       },
       prefill: { ...userInfo },

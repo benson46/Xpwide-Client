@@ -31,7 +31,7 @@ export default function OrderSuccessModal({ isOpen, amount, onClose }) {
               onClick={onClose}
               className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600"
             >
-              Continue Shopping
+              Orders page
             </button>
           </div>
         </div>
