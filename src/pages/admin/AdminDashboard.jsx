@@ -11,8 +11,6 @@ import SalesOverviewChart from "../../components/admin/dashboard/SalesOverviewCh
 import { BestSellingProductsChart } from "../../components/admin/dashboard/BestSellingProductsChart";
 import BestSellingCategoriesChart from "../../components/admin/dashboard/BestSellingCategoriesChart";
 import { BestSellingBrandsChart } from "../../components/admin/dashboard/BestSellingBrandsChart";
-
-
 export default function Dashboard() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -24,6 +22,9 @@ export default function Dashboard() {
   const [bestSellingProducts, setBestSellingProducts] = useState([]);
   const [bestSellingBrands, setBestSellingBrands] = useState([]);
   const [bestSellingCategories, setBestSellingCategories] = useState([]);
+  const [chartPeriod, setChartPeriod] = useState("daily");
+  const [chartStartDate, setChartStartDate] = useState(null);
+  const [chartEndDate, setChartEndDate] = useState(null);
 
   const admin = useSelector((state) => state.admin);
   const dispatch = useDispatch();
@@ -33,19 +34,18 @@ export default function Dashboard() {
     }
   });
 
+  const fetchBestSellingCategories = async () => {
+    try {
+      const response = await adminAxiosInstance.get("/best-selling-categories");
+      setBestSellingCategories(response.data.data);
+    } catch (err) {
+      console.error("Error fetching best-selling categories:", err);
+    }
+  };
 
-const fetchBestSellingCategories = async () => {
-  try {
-    const response = await adminAxiosInstance.get("/best-selling-categories");
-    setBestSellingCategories(response.data.data);
-  } catch (err) {
-    console.error("Error fetching best-selling categories:", err);
-  }
-};
-
-useEffect(() => {
-  fetchBestSellingCategories();
-}, []);
+  useEffect(() => {
+    fetchBestSellingCategories();
+  }, []);
 
   const fetchBestSellingBrands = async () => {
     try {
@@ -75,8 +75,13 @@ useEffect(() => {
 
   const fetchSalesOverview = async () => {
     try {
+      const params = { period: chartPeriod };
+      if (chartPeriod === "custom") {
+        params.startDate = chartStartDate?.toISOString();
+        params.endDate = chartEndDate?.toISOString();
+      }
       const response = await adminAxiosInstance.get("/sales-overview", {
-        params: { period },
+        params,
       });
       setSalesOverviewData(response.data.data);
     } catch (err) {
@@ -84,9 +89,10 @@ useEffect(() => {
     }
   };
 
+  // Update useEffect dependency array
   useEffect(() => {
     fetchSalesOverview();
-  }, [period]);
+  }, [chartPeriod, chartStartDate, chartEndDate]);
 
   const fetchSalesReport = async () => {
     try {
@@ -156,24 +162,66 @@ useEffect(() => {
         <main className="flex-1 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
-            
           </div>
 
           {/* Filters */}
           <div className="bg-gray-800 rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Report Filters</h2>
             <div className="flex flex-wrap gap-4 items-end">
-              {/* Sales Overview Chart */}
-            <SalesOverviewChart data={salesOverviewData} />
+              <div className="bg-gray-800 rounded-lg p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Sales Overview</h2>
+                  <div className="flex gap-4 items-center">
+                    <div>
+                      <label className="block text-sm mb-1">Chart Period</label>
+                      <select
+                        value={chartPeriod}
+                        onChange={(e) => setChartPeriod(e.target.value)}
+                        className="bg-gray-700 rounded p-2 text-white"
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+                    {chartPeriod === "custom" && (
+                      <>
+                        <div>
+                          <label className="block text-sm mb-1">From</label>
+                          <DatePicker
+                            selected={chartStartDate}
+                            onChange={setChartStartDate}
+                            className="bg-gray-700 rounded p-2 text-white"
+                            maxDate={chartEndDate || new Date()}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1">To</label>
+                          <DatePicker
+                            selected={chartEndDate}
+                            onChange={setChartEndDate}
+                            className="bg-gray-700 rounded p-2 text-white"
+                            minDate={chartStartDate}
+                            maxDate={new Date()}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <SalesOverviewChart data={salesOverviewData} />
+              </div>
 
-{/* Best-Selling Products Chart */}
-<BestSellingProductsChart data={bestSellingProducts} />
+              {/* Best-Selling Products Chart */}
+              <BestSellingProductsChart data={bestSellingProducts} />
 
-{/* Best-Selling Categories Chart */}
-<BestSellingCategoriesChart data={bestSellingCategories} />
+              {/* Best-Selling Categories Chart */}
+              <BestSellingCategoriesChart data={bestSellingCategories} />
 
-{/* Best-Selling Brands Chart */}
-<BestSellingBrandsChart data={bestSellingBrands} />
+              {/* Best-Selling Brands Chart */}
+              <BestSellingBrandsChart data={bestSellingBrands} />
               <div>
                 <label className="block text-sm mb-2">Period</label>
                 <select
