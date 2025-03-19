@@ -2,6 +2,7 @@ import React
  from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
 export const BestSellingBrandsChart = ({ data }) => {
+  console.log(data)
     return (
       <div className="bg-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Top 10 Best-Selling Brands</h2>
