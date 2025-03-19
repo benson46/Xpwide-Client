@@ -12,7 +12,6 @@ export default function Orders() {
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [userWalletBalance, setUserWalletBalance] = useState(0);
-  const [showRazorpay, setShowRazorpay] = useState(false);
   const [razorpayAmount, setRazorpayAmount] = useState(0);
 
   useEffect(() => {
@@ -132,31 +131,28 @@ export default function Orders() {
     }
   };
 
-  const processPaymentRetry = async () => {
+  const processPaymentRetry = async (method) => {
     try {
+      if (method === "Wallet" && userWalletBalance < selectedOrderForPayment.totalAmount) {
+        toast.error("Insufficient wallet balance");
+        return;
+      }
+
+      if (method === "COD" && selectedOrderForPayment.totalAmount > 1000) {
+        toast.error("COD not available for orders over ₹1000");
+        return;
+      }
+
       const response = await axiosInstance.post(
         `/orders/${selectedOrderForPayment._id}/retry-payment`,
-        { paymentMethod },
+        { paymentMethod: method },
         { withCredentials: true }
       );
 
-      if (paymentMethod === "Razorpay") {
-        // Set Razorpay amount from the response and show the component
+      if (method === "Razorpay") {
         setRazorpayAmount(response.data.amount);
-        setShowPaymentModal(false); // Close payment method modal
-        setShowRazorpay(true); // Show RazorPay component
-      } else if (paymentMethod === "Wallet") {
-        // Handle wallet payment
-        if (userWalletBalance < selectedOrderForPayment.totalAmount) {
-          toast.error("Insufficient wallet balance");
-          return;
-        }
-        toast.success("Payment successful!");
-        fetchOrders();
-        setShowPaymentModal(false);
       } else {
-        // Handle COD or other methods
-        toast.success("Payment method updated");
+        toast.success(method === "Wallet" ? "Payment successful!" : "Payment method updated");
         fetchOrders();
         setShowPaymentModal(false);
       }
@@ -164,6 +160,7 @@ export default function Orders() {
       toast.error(error.response?.data?.message || "Payment failed");
     }
   };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -418,92 +415,58 @@ export default function Orders() {
           </div>
         </div>
       )}
-      {showRazorpay && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <RazorPay
-              amount={razorpayAmount}
-              handlePlaceOrder={async (status) => {
-                if (status === "Success") {
-                  try {
-                    await axiosInstance.patch(
-                      `/orders/${selectedOrderForPayment._id}/update-payment-status`,
-                      { paymentStatus: "Success" },
-                      { withCredentials: true }
-                    );
-                    toast.success("Payment successful!");
-                    await fetchOrders(); // Wait for data refresh
-                  } catch (error) {
-                    toast.error("Failed to update payment status");
-                  }
-                } else {
-                  toast.error("Payment failed");
-                }
-                setShowRazorpay(false); // Close modal after updates
-              }}
-              isWallet={false}
-            />
-            <button
-              onClick={() => {
-                setShowRazorpay(false);
-                setSelectedOrderForPayment(null);
-              }}
-              className="w-full mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+     
       {/* Payment Retry Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-96">
             <h2 className="text-xl font-bold mb-4">Retry Payment</h2>
             <div className="space-y-3">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="COD"
-                  checked={paymentMethod === "COD"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                Cash on Delivery
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="Razorpay"
-                  checked={paymentMethod === "Razorpay"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                Razorpay
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="Wallet"
-                  checked={paymentMethod === "Wallet"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                Wallet (Balance: ₹{userWalletBalance.toFixed(2)})
-              </label>
-            </div>
-            <div className="flex gap-2 mt-4">
               <button
-                onClick={processPaymentRetry}
-                className="bg-green-500 text-white px-4 py-2 rounded flex-1"
-                disabled={!paymentMethod}
+                onClick={() => processPaymentRetry("COD")}
+                className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
               >
-                Confirm Payment
+                <span>Cash on Delivery</span>
+                {paymentMethod === "COD" && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
               </button>
+
+              <RazorPay
+                amount={razorpayAmount}
+                handlePlaceOrder={async (status) => {
+                  if (status === "Success") {
+                    try {
+                      await axiosInstance.post(
+                        `/orders/${selectedOrderForPayment._id}/retry-payment`,
+                        { paymentMethod: "Razorpay" },
+                        { withCredentials: true }
+                      );
+                      toast.success("Payment successful!");
+                      await fetchOrders();
+                    } catch (error) {
+                      toast.error("Failed to update payment status");
+                    }
+                  }
+                  setShowPaymentModal(false);
+                }}
+                isWallet={false}
+              />
+
               <button
-                onClick={() => setShowPaymentModal(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded flex-1"
+                onClick={() => processPaymentRetry("Wallet")}
+                className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
               >
-                Cancel
+                <span>
+                  Wallet (Balance: ₹{userWalletBalance.toFixed(2)})
+                </span>
+                {paymentMethod === "Wallet" && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
               </button>
             </div>
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="w-full mt-4 p-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

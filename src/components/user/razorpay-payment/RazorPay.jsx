@@ -99,7 +99,7 @@ const RazorPay = ({ amount, handlePlaceOrder, isWallet }) => {
         className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
         onClick={handlePayment}
       >
-        Pay Now
+        Pay Using RazorPay
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Minus, Plus } from "lucide-react";
+import { debounce } from "lodash";
 import { axiosInstance } from "../../utils/axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -9,32 +10,38 @@ export default function Cart() {
   const [loading, setLoading] = useState(true);
   const [subtotal, setSubtotal] = useState(0);
   const navigate = useNavigate();
+  const debouncedUpdatesRef = useRef({});
+
+  // Cleanup debounced functions on component unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debouncedUpdatesRef.current).forEach(debouncedFn => 
+        debouncedFn.cancel()
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const fetchCart = async () => {
       setLoading(true);
       try {
         const response = await axiosInstance.get("/cart");
-
         const cartProducts = response.data.items;
-        if (cartProducts && cartProducts.length > 0) {
-          const mappedProducts = cartProducts.map((item) => {
-            const prod = item.productId;
-            return {
-              id: prod._id,
-              name: prod.name,
-              category: prod.category,
-              manufacturer: prod.manufacturer,
-              // Use discountedPrice if an offer exists, otherwise the original price
-              price: prod.hasOffer ? prod.discountedPrice : prod.price,
-              originalPrice: prod.price,
-              hasOffer: prod.hasOffer,
-              offer: prod.offer,
-              quantity: item.quantity,
-              stock: prod.stock,
-              image: prod.images[0],
-            };
-          });
+        
+        if (cartProducts?.length > 0) {
+          const mappedProducts = cartProducts.map((item) => ({
+            id: item.productId._id,
+            name: item.productId.name,
+            category: item.productId.category,
+            manufacturer: item.productId.manufacturer,
+            price: item.productId.hasOffer ? item.productId.discountedPrice : item.productId.price,
+            originalPrice: item.productId.price,
+            hasOffer: item.productId.hasOffer,
+            offer: item.productId.offer,
+            quantity: item.quantity,
+            stock: item.productId.stock,
+            image: item.productId.images[0],
+          }));
           setProducts(mappedProducts);
           setSubtotal(response.data.subtotal);
         } else {
@@ -47,64 +54,101 @@ export default function Cart() {
         setLoading(false);
       }
     };
-
     fetchCart();
   }, []);
 
-  const updateQuantity = async (id, change) => {
-    try {
-      const product = products.find((product) => product.id === id);
-      if (!product) return;
+  const updateQuantity = useCallback((id, change) => {
+    setProducts(prevProducts => {
+      const updatedProducts = prevProducts.map(product => {
+        if (product.id === id) {
+          const newQuantity = product.quantity + change;
+          if (newQuantity < 1 || newQuantity > product.stock || newQuantity > 5) {
+            return product;
+          }
+          return { ...product, quantity: newQuantity };
+        }
+        return product;
+      });
       
-      const newQuantity = product.quantity + change;
-      if (newQuantity < 1 || newQuantity > product.stock || newQuantity > 5) return;
-  
-      const response = await axiosInstance.patch("/cart", { productId: id, quantity: newQuantity });
-  
-      if (response.data.success) {
-        const updatedStock = response.data.productStock; // Get latest stock from backend
-  
-        setProducts((prevProducts) => {
-          const updatedProducts = prevProducts.map((p) => {
-            if (p.id === id) {
-              const adjustedQuantity = Math.min(p.quantity + change, updatedStock);
-              return { ...p, quantity: adjustedQuantity, stock: updatedStock };
-            }
-            return p;
-          });
-  
-          const newSubtotal = updatedProducts.reduce(
-            (sum, p) => sum + p.price * p.quantity,
-            0
-          );
-          setSubtotal(newSubtotal);
-          return updatedProducts;
-        });
-  
-        toast.success(response.data.message);
-      }
-    } catch (error) {
-      console.error("Error updating quantity:", error);
+      // Update subtotal optimistically
+      const newSubtotal = updatedProducts.reduce(
+        (sum, p) => sum + p.price * p.quantity,
+        0
+      );
+      setSubtotal(newSubtotal);
+      return updatedProducts;
+    });
+
+    // Cancel any pending updates for this product
+    if (debouncedUpdatesRef.current[id]) {
+      debouncedUpdatesRef.current[id].cancel();
     }
-  };
-  
+
+    // Create new debounced function if it doesn't exist
+    if (!debouncedUpdatesRef.current[id]) {
+      debouncedUpdatesRef.current[id] = debounce(async (productId, quantity) => {
+        try {
+          const response = await axiosInstance.patch("/cart", { 
+            productId, 
+            quantity 
+          });
+
+          if (response.data.success) {
+            // Update stock from server response
+            setProducts(prevProducts => 
+              prevProducts.map(p => 
+                p.id === productId 
+                  ? { ...p, stock: response.data.productStock } 
+                  : p
+              )
+            );
+            toast.success(response.data.message);
+          }
+        } catch (error) {
+          console.error("Update failed:", error);
+          // Revert to server state on error
+          try {
+            const response = await axiosInstance.get("/cart");
+            const cartProducts = response.data.items.map((item) => ({
+              id: item.productId._id,
+              quantity: item.quantity,
+              stock: item.productId.stock,
+              // ... other properties
+            }));
+            setProducts(cartProducts);
+            setSubtotal(response.data.subtotal);
+            toast.error("Failed to update quantity. Please try again.");
+          } catch (fetchError) {
+            console.error("Error fetching cart:", fetchError);
+          }
+        }
+      }, 500); // 500ms debounce delay
+    }
+
+    // Get current quantity from state (after optimistic update)
+    const currentQuantity = products.find(p => p.id === id)?.quantity || 0;
+    const targetQuantity = currentQuantity + change;
+    
+    if (targetQuantity >= 1 && targetQuantity <= 5) {
+      debouncedUpdatesRef.current[id](id, targetQuantity);
+    }
+  }, [products]);
 
   const removeProduct = async (id) => {
     try {
-      // Make the API call to remove the product
-      const res = await axiosInstance.delete("/cart", {data: { productId: id },
-      });
+      // Cancel any pending updates for this product
+      if (debouncedUpdatesRef.current[id]) {
+        debouncedUpdatesRef.current[id].cancel();
+        delete debouncedUpdatesRef.current[id];
+      }
 
+      const res = await axiosInstance.delete("/cart", { data: { productId: id } });
+      
       if (res.data.success) {
-        // Update local state only if API call was successful
-        setProducts((prevProducts) => {
-          const updatedProducts = prevProducts.filter((p) => p.id !== id);
-          const newSubtotal = updatedProducts.reduce(
-            (sum, p) => sum + p.price * p.quantity,
-            0
-          );
-          setSubtotal(newSubtotal);
-          return updatedProducts;
+        setProducts(prev => {
+          const updated = prev.filter(p => p.id !== id);
+          setSubtotal(updated.reduce((sum, p) => sum + p.price * p.quantity, 0));
+          return updated;
         });
         toast.success(res.data.message);
       }
@@ -242,7 +286,6 @@ export default function Cart() {
                         </button>
                       </div>
 
-                      {/* Per item total price */}
                       <div className="ml-auto font-bold">
                         ₹{(product.price * product.quantity).toFixed(2)}
                       </div>
@@ -261,15 +304,12 @@ export default function Cart() {
               </div>
               <button
                 disabled={
-                  products.length === 0 || products.some((p) => p.quantity > p.stock)
+                  products.length === 0 || 
+                  products.some(p => p.quantity > p.stock)
                 }
-                
                 className={`w-full py-2 rounded transition-colors ${
                   products.length === 0 ||
-                  products.some(
-                    (product) =>
-                      product.stock === 0 || product.quantity > product.stock
-                  )
+                  products.some(p => p.stock === 0 || p.quantity > p.stock)
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-black text-white hover:bg-gray-900"
                 }`}
