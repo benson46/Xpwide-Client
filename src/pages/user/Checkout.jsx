@@ -248,25 +248,44 @@ export default function CheckoutPage() {
         totalAmount: orderSummary.total,
         couponCode: couponDetails ? couponDetails.code : null,
         couponId: couponDetails ? couponDetails._id : null,
-        paymentStatus: paymentStatus, // Pass the payment status directly
+        paymentStatus: paymentStatus 
       };
   
-      // Create the order only after payment is successful
+      console.log("Attempting order submission with:", orderData);
+  
+      // Always attempt the API call for COD/Wallet
       const response = await axiosInstance.post("/checkout-order-success", orderData);
-      console.log(response)
+      
+      // Check if response exists before accessing data
+      if (!response?.data) {
+        throw new Error("No response from server");
+      }
+  
       if (response.data.success) {
-        if (paymentStatus === "Success") {
-          toast.success("Order placed successfully!");
-          setShowSuccessModal(true);
-        } else if (paymentStatus === "Failed") {
-          navigate("/orders");
-        }
+        toast.success("Order placed successfully!");
+        setShowSuccessModal(true);
+      } else {
+        throw new Error(response.data.message || "Order processing failed");
       }
     } catch (error) {
-      console.error("Order placement error:", error);
-      toast.error("Order processing failed.");
+      console.error("Full error details:", error);
+      toast.error(
+        error.response?.data?.message ||
+        error.message ||
+        "Could not connect to server. Check your network connection."
+      );
+  
+      if (error.message.includes("network")) {
+        navigate("/cart");
+      }
+      
+      if (paymentStatus === "Failed") {
+        navigate("/orders");
+      }
     }
   };
+
+  
 
   if (loading) {
     return (
@@ -587,7 +606,7 @@ export default function CheckoutPage() {
               />
             ) : (
               <button
-                onClick={handlePlaceOrder}
+                onClick={()=>handlePlaceOrder("Success")}
                 className="w-full py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
               >
                 Place Order (
