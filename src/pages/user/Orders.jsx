@@ -13,6 +13,16 @@ export default function Orders() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [userWalletBalance, setUserWalletBalance] = useState(0);
   const [razorpayAmount, setRazorpayAmount] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelData, setCancelData] = useState({
+    orderId: null,
+    productId: null,
+  });
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnData, setReturnData] = useState({
+    orderId: null,
+    productId: null,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,8 +142,12 @@ export default function Orders() {
   };
 
   const processPaymentRetry = async (method) => {
+    setPaymentMethod(method);
     try {
-      if (method === "Wallet" && userWalletBalance < selectedOrderForPayment.totalAmount) {
+      if (
+        method === "Wallet" &&
+        userWalletBalance < selectedOrderForPayment.totalAmount
+      ) {
         toast.error("Insufficient wallet balance");
         return;
       }
@@ -152,7 +166,9 @@ export default function Orders() {
       if (method === "Razorpay") {
         setRazorpayAmount(response.data.amount);
       } else {
-        toast.success(method === "Wallet" ? "Payment successful!" : "Payment method updated");
+        toast.success(
+          method === "Wallet" ? "Payment successful!" : "Payment method updated"
+        );
         fetchOrders();
         setShowPaymentModal(false);
       }
@@ -160,7 +176,6 @@ export default function Orders() {
       toast.error(error.response?.data?.message || "Payment failed");
     }
   };
-
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -259,14 +274,19 @@ export default function Orders() {
                               {product.status === "Delivered" &&
                                 canReturnOrder(product) && (
                                   <button
-                                    onClick={() =>
-                                      returnOrder(order._id, product._id)
-                                    }
+                                    onClick={() => {
+                                      setReturnData({
+                                        orderId: order._id,
+                                        productId: product._id,
+                                      });
+                                      setShowReturnModal(true);
+                                    }}
                                     className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
                                   >
                                     RETURN
                                   </button>
                                 )}
+
                               {![
                                 "Return Pending",
                                 "Return Rejected",
@@ -275,9 +295,13 @@ export default function Orders() {
                                 "Delivered",
                               ].includes(product.status) && (
                                 <button
-                                  onClick={() =>
-                                    cancelOrder(order._id, product._id)
-                                  }
+                                  onClick={() => {
+                                    setCancelData({
+                                      orderId: order._id,
+                                      productId: product._id,
+                                    });
+                                    setShowCancelModal(true);
+                                  }}
                                   className="bg-red-500 text-white px-3 py-1 rounded text-sm"
                                 >
                                   CANCEL
@@ -415,7 +439,7 @@ export default function Orders() {
           </div>
         </div>
       )}
-     
+
       {/* Payment Retry Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
@@ -427,7 +451,9 @@ export default function Orders() {
                 className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
               >
                 <span>Cash on Delivery</span>
-                {paymentMethod === "COD" && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                {paymentMethod === "COD" && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                )}
               </button>
 
               <RazorPay
@@ -455,10 +481,10 @@ export default function Orders() {
                 onClick={() => processPaymentRetry("Wallet")}
                 className="py-2 bg-gray-700 text-white rounded hover:bg-gray-800 w-full"
               >
-                <span>
-                  Wallet (Balance: ₹{userWalletBalance.toFixed(2)})
-                </span>
-                {paymentMethod === "Wallet" && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                <span>Wallet (Balance: ₹{userWalletBalance.toFixed(2)})</span>
+                {paymentMethod === "Wallet" && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                )}
               </button>
             </div>
             <button
@@ -467,6 +493,64 @@ export default function Orders() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Confirm Cancellation</h3>
+            <p className="mb-4">
+              Are you sure you want to cancel this product?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  cancelOrder(cancelData.orderId, cancelData.productId);
+                  setShowCancelModal(false);
+                }}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Confirmation Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Confirm Return</h3>
+            <p className="mb-4">
+              Are you sure you want to return this product?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowReturnModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  returnOrder(returnData.orderId, returnData.productId);
+                  setShowReturnModal(false);
+                }}
+                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
