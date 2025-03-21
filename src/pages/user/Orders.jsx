@@ -385,6 +385,10 @@ export default function Orders() {
                 <strong>Payment Method:</strong> {selectedOrder.paymentMethod}
               </p>
               <p>
+                <strong>Address: </strong>{" "}
+                {`${selectedOrder.addressId.name}, ${selectedOrder.addressId.address} ${selectedOrder.addressId.landmark} ${selectedOrder.addressId.city} ${selectedOrder.addressId.state} ${selectedOrder.addressId.pincode}`}
+              </p>
+              <p>
                 <strong>Total Amount:</strong>{" "}
                 <span className="flex items-center gap-1">
                   <IndianRupee className="h-4 w-4" />
