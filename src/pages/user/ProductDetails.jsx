@@ -4,6 +4,7 @@ import { axiosInstance } from "../../utils/axios";
 import { HeartIcon, IndianRupee } from "lucide-react";
 import toast from "react-hot-toast";
 import { ImageModal } from "../../components/user/ImageModal";
+import NotFound from "../../components/user/404page";
 
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
@@ -32,6 +33,8 @@ export default function ProductDetails() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
 
+  const [productNotFound, setProductNotFound] = useState(false);
+
   const reviews = [
     {
       author: "Anonymous",
@@ -52,31 +55,44 @@ export default function ProductDetails() {
 
   useEffect(() => {
     const fetchProductDetail = async () => {
-      const response = await axiosInstance.get("/product", {
-        params: { productId },
-      });
-      if (response.data.product.isBlocked) {
-        toast.error("Product Blocked");
-        navigate("/");
-      } else {
-        setProduct(response.data.product);
-        const relatedProducts = await axiosInstance.get("/related-products", {
-          params: {
-            categoryId: response.data.product.category?._id,
-            productId,
-          },
+      try {
+        const response = await axiosInstance.get("/product", {
+          params: { productId },
         });
-        setRelatedProducts(relatedProducts.data.products);
+        if (response.data.product.isBlocked) {
+          toast.error("Product Blocked");
+          setProductNotFound(true);
+        } else {
+          setProduct(response.data.product);
+          const relatedProducts = await axiosInstance.get("/related-products", {
+            params: {
+              categoryId: response.data.product.category?._id,
+              productId,
+            },
+          });
+          setRelatedProducts(relatedProducts.data.products);
 
-        const user = JSON.parse(localStorage.getItem("user"));
-        console.log(user);
-        if (user) {
-          checkWishlistStatus(response.data.product._id);
+          const user = JSON.parse(localStorage.getItem("user"));
+          console.log(user);
+          if (user) {
+            checkWishlistStatus(response.data.product._id);
+          }
+        }
+      } catch (error) {
+        if (!error.response?.success) {
+          setProductNotFound(true);
+        } else {
+          toast.error("Failed to load product details");
         }
       }
     };
     fetchProductDetail();
   }, [productId]);
+
+  // Add this at the top of your return statement
+  if (productNotFound) {
+    return <NotFound />;
+  }
 
   const checkWishlistStatus = async (productId) => {
     try {

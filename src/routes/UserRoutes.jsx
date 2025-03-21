@@ -17,6 +17,8 @@ import CheckoutPage from "../pages/user/Checkout";
 import ForgotPasswordEmail from "../pages/user/ForgotPasswordEmail";
 import Wallet from '../pages/user/Wallet';
 import Wishlist from '../pages/user/Wishlist';
+import Footer from '../components/user/footer';
+import NotFound from '../components/user/404page';
 
 function UserRoutes() {
   const location = useLocation();
@@ -56,8 +58,9 @@ function UserRoutes() {
         <Route path="wishlist" element={<UserAuth><Wishlist /></UserAuth>} />
 
         {/* Catch-all Route */}
-        <Route path="*" element={<>404 PAGE NOT FOUND</>} />
+        <Route path="*" element={<NotFound/>} />
       </Routes>
+      <Footer/>
     </>
   );
 }
