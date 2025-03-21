@@ -4,7 +4,6 @@ import { axiosInstance } from "../../utils/axios";
 import { HeartIcon, IndianRupee } from "lucide-react";
 import toast from "react-hot-toast";
 import { ImageModal } from "../../components/user/ImageModal";
-import NotFound from "../../components/user/404page";
 
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
@@ -61,7 +60,7 @@ export default function ProductDetails() {
         });
         if (response.data.product.isBlocked) {
           toast.error("Product Blocked");
-          setProductNotFound(true);
+          navigate("/")
         } else {
           setProduct(response.data.product);
           const relatedProducts = await axiosInstance.get("/related-products", {
@@ -80,19 +79,15 @@ export default function ProductDetails() {
         }
       } catch (error) {
         if (!error.response?.success) {
-          setProductNotFound(true);
+          navigate("/404", { replace: true });
         } else {
           toast.error("Failed to load product details");
         }
       }
     };
     fetchProductDetail();
-  }, [productId]);
+  }, [productId,navigate]);
 
-  // Add this at the top of your return statement
-  if (productNotFound) {
-    return <NotFound />;
-  }
 
   const checkWishlistStatus = async (productId) => {
     try {
