@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   // State management
+  const [realPrice,setRealPrice] = useState(0);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [showAddAddress, setShowAddAddress] = useState(false);
@@ -62,6 +63,8 @@ export default function CheckoutPage() {
         // Save the products as returned from the backend
         setProducts(checkoutResponse.data.items || []);
         const summary = checkoutResponse.data;
+
+        setRealPrice(summary.total);
         setOrderSummary({
           quantity: summary.totalQuantity || 0,
           originalPrice: summary.originalPrice || 0,
@@ -222,7 +225,7 @@ export default function CheckoutPage() {
     toast.success("Coupon removed");
   };
 
-  
+  console.log('products',products);
   // Handle order placement
   const handlePlaceOrder = async (paymentStatus) => {
     if (!selectedAddress) {
@@ -243,7 +246,7 @@ export default function CheckoutPage() {
           productId: item.productId._id,
           quantity: item.quantity,
           originalPrice: item.productId.price,
-          productPrice: item.finalPrice || item.productId.price,
+          productPrice: item.effectivePrice || item.productId.price,
         })),
         totalAmount: orderSummary.total,
         couponCode: couponDetails ? couponDetails.code : null,
@@ -474,7 +477,7 @@ export default function CheckoutPage() {
               <span>Price ({orderSummary.quantity} item)</span>
               <span className="flex items-center">
                 <IndianRupee className="h-4 w-4" />
-                {orderSummary.total.toLocaleString()}
+                {realPrice}
               </span>
             </div>
             {orderSummary.discountedPrice > 0 && (
@@ -497,6 +500,15 @@ export default function CheckoutPage() {
                 </span>
               )}
             </div>
+            {orderSummary.couponDiscount > 0 && (
+                <div className="flex justify-between mt-2 text-sm text-green-600">
+                  <span>Coupon Discount</span>
+                  <span className="flex items-center">
+                    -<IndianRupee className="h-4 w-4" />
+                    {orderSummary.couponDiscount.toLocaleString()}
+                  </span>
+                </div>
+              )}
 
             {/* Coupon Code Section */}
             <div className="py-4 border-t border-b">
@@ -523,15 +535,7 @@ export default function CheckoutPage() {
                   </button>
                 )}
               </div>
-              {orderSummary.couponDiscount > 0 && (
-                <div className="flex justify-between mt-2 text-sm text-green-600">
-                  <span>Coupon Discount</span>
-                  <span className="flex items-center">
-                    -<IndianRupee className="h-4 w-4" />
-                    {orderSummary.couponDiscount.toLocaleString()}
-                  </span>
-                </div>
-              )}
+              
             </div>
 
             {/* Display available public coupons */}
