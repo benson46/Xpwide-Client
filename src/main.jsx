@@ -9,7 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 document.title = import.meta.env.VITE_APP_TITLE;
 createRoot(document.getElementById('root')).render(
-  <GoogleOAuthProvider clientId = {import.meta.env.VITE_GOOGLE_CLIENTID}>
+  <GoogleOAuthProvider clientId = {import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <StrictMode>
       <BrowserRouter>
         <Provider store={store}>
