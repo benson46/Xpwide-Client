@@ -9,7 +9,7 @@ import ProductDetails from "../pages/user/ProductDetails";
 import {
   UserAuth,
   UserRequireAuth,
-} from "../components/private/userProtectedRoute";
+} from "../components/private/UserProtectedRoute"; 
 import ShopPage from "../pages/user/ShopPage";
 import Orders from "../pages/user/Orders";
 import Navbar from "../components/user/Navbar";
