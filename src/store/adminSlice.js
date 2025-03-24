@@ -40,7 +40,7 @@ const adminSlice = createSlice({
       ? JSON.parse(localStorage.getItem("adminInfo"))
       : null,
     loading: false,
-    logoutError: null, // Add an error field for logout
+    logoutError: null, 
   },
   reducers: {},
   extraReducers: (builder) => {
