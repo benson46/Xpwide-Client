@@ -462,7 +462,7 @@ export default function Orders() {
               </button>
 
               <RazorPay
-                amount={razorpayAmount}
+                amount={selectedOrderForPayment.totalAmount}
                 handlePlaceOrder={async (status) => {
                   if (status === "Success") {
                     try {
