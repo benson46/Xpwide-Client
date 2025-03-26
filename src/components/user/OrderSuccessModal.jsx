@@ -22,7 +22,7 @@ export default function OrderSuccessModal({ isOpen, amount, onClose }) {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Payment success</h2>
+            <h2 className="text-xl font-semibold mb-2">Order success</h2>
             <div className="mb-4">
               <p className="text-gray-600 mb-1">Amount</p>
               <p className="text-2xl font-bold">₹{amount}</p>
