@@ -159,10 +159,14 @@ export default function Dashboard() {
     setIsCollapsed((prev) => !prev);
   };
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar toggleSidebar={toggleSidebar} />
-      <div className="flex">
-        <Sidebar activePage="Dashboard" isCollapsed={isCollapsed} />
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <div className="w-full">
+        <Navbar toggleSidebar={toggleSidebar} />
+      </div>
+      <div className="flex flex-1">
+        <div className="sm:block">
+          <Sidebar activePage="Dashboard" isCollapsed={isCollapsed} />
+        </div>
         <main className="flex-1 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
