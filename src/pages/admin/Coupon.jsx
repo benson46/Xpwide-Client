@@ -242,12 +242,12 @@ const Coupons = () => {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      <div className="w-full">
-        <Navbar toggleSidebar={toggleSidebar} />
-      </div>
-      <div className="flex flex-1">
-        <Sidebar activePage="Coupons" isCollapsed={isCollapsed} />
+      <div className="min-h-screen bg-black text-white flex flex-col">
+        <div className="w-full">
+          <Navbar toggleSidebar={toggleSidebar} />
+        </div>
+        <div className="flex flex-1">
+          <Sidebar activePage="Coupons" isCollapsed={isCollapsed} />
         <main className="flex-1 overflow-hidden flex flex-col p-4 sm:p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl sm:text-2xl font-semibold">COUPONS</h1>

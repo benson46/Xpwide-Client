@@ -83,7 +83,7 @@ export default function Brands() {
     if (searchResults.length > 0) return;
     setLoading(true);
     fetchBrand();
-  }, [currentPage,searchResults.length]);
+  }, [currentPage, searchResults.length]);
 
   const handleAddBrand = async (formData) => {
     try {
@@ -238,15 +238,17 @@ export default function Brands() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar toggleSidebar={toggleSidebar} />
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <div className="w-full">
+        <Navbar toggleSidebar={toggleSidebar} />
+      </div>
 
-      <div className="flex flex-row">
+      <div className="flex flex-1">
         <div className="sm:block">
           <Sidebar activePage="Brands" isCollapsed={isCollapsed} />
         </div>
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 overflow-hidden flex flex-col p-4 sm:p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl sm:text-2xl font-semibold">BRANDS</h1>
             <div className="flex gap-4">
