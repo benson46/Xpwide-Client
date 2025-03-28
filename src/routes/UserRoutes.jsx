@@ -20,8 +20,10 @@ import CheckoutPage from "../pages/user/Checkout";
 import ForgotPasswordEmail from "../pages/user/ForgotPasswordEmail";
 import Wallet from "../pages/user/Wallet";
 import Wishlist from "../pages/user/Wishlist";
-import Footer from "../components/user/footer";
+import Footer from "../components/user/Footer";
 import NotFound from "../components/user/404page";
+import AboutUs from "../pages/user/AboutUs";
+import Contact from "../pages/user/Contact";
 
 function UserRoutes() {
   const location = useLocation();
@@ -142,6 +144,8 @@ function UserRoutes() {
           }
         />
         {/* Catch-all Route */}
+        <Route path="aboutus" element={<AboutUs />} />
+        <Route path="contact" element={<Contact />} />
         <Route path="404" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
