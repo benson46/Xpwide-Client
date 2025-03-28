@@ -51,8 +51,8 @@ export default function BannerPage() {
   }, [currentPage]);
 
   const handleAddBanner = (newBanner) => {
-    console.log(newBanner)
-    setBanners((prev) => [...prev,newBanner]);
+    console.log(newBanner);
+    setBanners((prev) => [...prev, newBanner]);
     setTotalBanners((prev) => prev + 1);
     setIsAddModalOpen(false);
     toast.success("Banner added!");
@@ -104,10 +104,7 @@ export default function BannerPage() {
       </td>
       <td>{banner.title}</td>
       <td>
-        <a
-          href={banner.link}
-          className="text-yellow-500 hover:underline"
-        >
+        <a href={banner.link} className="text-yellow-500 hover:underline">
           {banner.link}
         </a>
       </td>
@@ -127,11 +124,7 @@ export default function BannerPage() {
           onClick={() => toggleStatus(banner._id)}
           className="p-2 hover:bg-gray-800 rounded"
         >
-          {banner.isActive ? (
-            <EyeOff size={20} />
-          ) : (
-            <Eye size={20} />
-          )}
+          {banner.isActive ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
         <button
           onClick={() => {
@@ -168,15 +161,18 @@ export default function BannerPage() {
         </button>
       </td>
     </tr>
-  )
-
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar toggleSidebar={toggleSidebar}/>
-      <div className="flex">
-        <Sidebar activePage="Banners" isCollapsed={isCollapsed} />
-
+    <div className="min-h-screen bg-black text-white flex flex-col">
+          <div className="w-full">
+            <Navbar toggleSidebar={toggleSidebar} />
+          </div>
+    
+          <div className="flex flex-1">
+            <div className="sm:block">
+              <Sidebar activePage="Banners" isCollapsed={isCollapsed} />
+            </div>
         <main className="flex-1 p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">Banner Management</h1>
@@ -200,7 +196,7 @@ export default function BannerPage() {
               itemsPerPage={10}
               totalItems={totalBanners}
               onPageChange={setCurrentPage}
-              renderRow={(banner)=>renderBannerRow(banner)}
+              renderRow={(banner) => renderBannerRow(banner)}
             />
           )}
 
