@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [salesOverviewData, setSalesOverviewData] = useState([]);
   const [bestSellingProducts, setBestSellingProducts] = useState([]);
   const [bestSellingBrands, setBestSellingBrands] = useState([]);
@@ -154,11 +155,14 @@ export default function Dashboard() {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => !prev);
+  };
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
+      <Navbar toggleSidebar={toggleSidebar} />
       <div className="flex">
-        <Sidebar activePage="Dashboard" />
+        <Sidebar activePage="Dashboard" isCollapsed={isCollapsed} />
         <main className="flex-1 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
