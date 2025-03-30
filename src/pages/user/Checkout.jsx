@@ -249,6 +249,7 @@ export default function CheckoutPage() {
           productPrice: item.effectivePrice || item.productId.price,
         })),
         totalAmount: orderSummary.total,
+        realPrice,
         couponCode: couponDetails ? couponDetails.code : null,
         couponId: couponDetails ? couponDetails._id : null,
         paymentStatus: paymentStatus 
