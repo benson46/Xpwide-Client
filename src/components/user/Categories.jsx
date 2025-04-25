@@ -32,28 +32,27 @@ export default function Categories() {
   };
 
   return (
-    <div className="flex justify-center space-x-8 my-8">
+    <div className="px-4 my-8">
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
-        categories.map((category) => (
-          <button
-            key={category._id} 
-            onClick={() => handleCategoryClick(category)}
-            className="flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mb-2">
-              <span className="text-2xl">{category.icon}</span>
-            </div>
-            <span className="text-sm font-medium">{category.title}</span>
-          </button>
-        ))
+        <div className="flex overflow-x-auto pb-4 gap-6 md:flex-wrap md:justify-center md:gap-8">
+          {categories.map((category) => (
+            <button
+              key={category._id}
+              onClick={() => handleCategoryClick(category)}
+              className="flex flex-col items-center p-3 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-200 rounded-lg flex items-center justify-center mb-2">
+                <span className="text-xl md:text-2xl">{category.icon}</span>
+              </div>
+              <span className="text-xs md:text-sm font-medium text-center">{category.title}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
 }
-
-
-
